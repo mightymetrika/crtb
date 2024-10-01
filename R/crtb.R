@@ -68,35 +68,54 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
   used <- used + 1
 
   # Step 5: Rearrange into blocks with complements
+
+  block_list <- list() # initialize list
+  # get block1 size
   if (length(all_tags) %% 2 == 0){
-    # Get block1 size
-    block1_size <- length(all_tags) / 2
-
-    # Get block1 (first block with a resample in resampled_tags)
-    block1 <- unique(resampled_tags) |> utils::head(block1_size)
-
-    # Get resampled_tags not represented in block 1
-    temp_rtags <- resampled_tags[-match(block1, resampled_tags)]
-
-    # Get remaining unique tags from temp_rtags
-    block2 <- unique(temp_rtags)
-
-
+    block_size <- length(all_tags) / 2
   } else {
-    #handle odd case later
-    block1 <- NULL
-    temp_rtags <- NULL
-    block2 <- NULL
-    warning("Odd number of tags; handling of odd cases not implemented yet.")
+    block_size <- (length(all_tags) / 2)
   }
 
-  return(list(dat = dat,
-              tag_cols = tag_cols,
-              all_tags = all_tags,
-              resampled_tags = resampled_tags,
-              block1 = block1,
-              temp_rtags = temp_rtags,
-              block2 = block2))
+  i <- 1 # initialize iterator (for naming blocks)
+  temp_rtags <- block_loop <- resampled_tags # get resampled tags
+  BLOCK_1_SIZE <- block_size # get initial block size (constant)
+
+  # build blocks
+  while(length(temp_rtags) > 1){
+    if (i == 1){
+      # Get block1 (first block with a resample in resampled_tags)
+      block <- unique(block_loop) |> utils::head(block_size)
+      block_stem = block
+
+      # Save block
+      block_list[[paste0("block",i)]] <- list(block = block,
+                                              block_size = block_size)
+    } else {
+      # Get block_loop not represented in block 1
+      temp_rtags <- temp_rtags[-match(block_stem, temp_rtags)]
+      if (length(temp_rtags) == 0) break
+
+      # Get remaining unique tags from temp_rtags
+      block_stem <- unique(temp_rtags)
+      block_size <- length(block_stem)
+
+      # Get remainder of resampled tags
+      ## note you still need to determine how to handle updating the loop.
+      ## There are many possible methods (much more than 2)
+      # block_loop <- c(temp_rtags, block_loop) # method 1
+      block_loop <- c(block_stem, block_loop) # method 2
+      block <- block_loop |> unique() |> utils::head(BLOCK_1_SIZE)
+
+      # Save block
+      block_list[[paste0("block",i)]] <- list(block = block,
+                                              block_size = block_size)
+    }
+
+    i = i + 1
+  }
+
+  return(block_list)
 
   block_size <- 5  # Example block size
   blocks <- split(resampled_tags, ceiling(seq_along(resampled_tags)/block_size))

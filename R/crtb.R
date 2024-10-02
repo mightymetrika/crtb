@@ -68,24 +68,16 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
   used <- used + 1
 
   # Step 5: Rearrange into blocks with complements
-
   block_list <- list() # initialize list
-  # get block1 size
-  if (length(all_tags) %% 2 == 0){
-    block_size <- length(all_tags) / 2
-  } else {
-    block_size <- (length(all_tags) / 2)
-  }
-
+  BLOCK_SIZE <- block_size <- floor(length(all_tags) / 2) # get block size (CONSTANT and variable)
+  remaining_rtags <- loop_rtags <- resampled_tags # get resampled tags
   i <- 1 # initialize iterator (for naming blocks)
-  temp_rtags <- block_loop <- resampled_tags # get resampled tags
-  BLOCK_1_SIZE <- block_size # get initial block size (constant)
 
   # build blocks
-  while(length(temp_rtags) > 1){
+  while(length(remaining_rtags) > 1){
     if (i == 1){
       # Get block1 (first block with a resample in resampled_tags)
-      block <- unique(block_loop) |> utils::head(block_size)
+      block <- unique(loop_rtags) |> utils::head(block_size)
       block_stem = block
 
       # Save block
@@ -93,19 +85,20 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
                                               block_size = block_size)
     } else {
       # Get block_loop not represented in block 1
-      temp_rtags <- temp_rtags[-match(block_stem, temp_rtags)]
-      if (length(temp_rtags) == 0) break
+      remaining_rtags <- remaining_rtags[-match(block_stem, remaining_rtags)]
+      if (length(remaining_rtags) == 0) break
 
-      # Get remaining unique tags from temp_rtags
-      block_stem <- unique(temp_rtags)
+      # Get remaining unique tags from remaining_rtags
+      block_stem <- unique(remaining_rtags)
       block_size <- length(block_stem)
 
       # Get remainder of resampled tags
-      ## note you still need to determine how to handle updating the loop.
-      ## There are many possible methods (much more than 2)
-      # block_loop <- c(temp_rtags, block_loop) # method 1
-      block_loop <- c(block_stem, block_loop) # method 2
-      block <- block_loop |> unique() |> utils::head(BLOCK_1_SIZE)
+      # add unique remaining tags (block_stem) onto loop_rtags
+      loop_rtags <- c(block_stem, loop_rtags)
+      # combine the block_stem with enough elements of loop_rtags to form a full block
+      block <- loop_rtags |> unique() |> utils::head(BLOCK_SIZE)
+      # remove elements from loop_rtags which were used to help fill out the block
+      loop_rtags <- loop_rtags[-match(block |> utils::tail(BLOCK_SIZE - block_size), loop_rtags)]
 
       # Save block
       block_list[[paste0("block",i)]] <- list(block = block,
@@ -115,34 +108,49 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
     i = i + 1
   }
 
-  return(block_list)
+  # return(block_list)
+  #
+  # block_size <- 5  # Example block size
+  # blocks <- split(resampled_tags, ceiling(seq_along(resampled_tags)/block_size))
 
-  block_size <- 5  # Example block size
-  blocks <- split(resampled_tags, ceiling(seq_along(resampled_tags)/block_size))
+  # Get complement of each block
 
-  # Steps 6-10: Process blocks
-  for (i in seq_along(blocks)) {
-    block <- blocks[[i]]
-    # Get complement of the block
-    complement <- unlist(blocks[-i])
+  # Steps 6: Process blocks
+  complement_list <- vector(mode = "list", length = length(block_list)) # initialize list
+  # in_complements <- vector(mode = "numeric")
+  for (i in seq_along(block_list)) {
+    # get complement of the block
+    # complement <- unlist(blocks[-i])
+    # complement_list[[i]] <- setdiff(all_tags, block_list[[i]]$block) |> #complement
+    #   sample(BLOCK_SIZE, replace = FALSE) |> # sample correct number of elements
+    #   utils::head(block_list[[i]]$block_size) # get number of elements needed.
 
-    # Step 6: Get order within block
-    block_order <- order(block)
+    complement <- setdiff(all_tags, block_list[[i]]$block) #|> #complement
+      #sample(BLOCK_SIZE, replace = FALSE)
 
-    # Step 7: Get order within complement
-    complement_order <- order(complement)
+    # complement <- complement[order(match(complement |> as.factor() |> as.numeric(),
+    #                                      block_list[[i]]$block |> as.factor() |> as.numeric()))]
 
-    # Step 8: Replace block resample tags with complement tags
-    blocks[[i]] <- complement[complement_order]
 
-    # Steps 9-10: Handle fragments
-    if (i == length(blocks) && length(block) < block_size) {
-      # Use adjacent block to complete the complement
-      adjacent_block <- blocks[[i - 1]]
-      complement <- c(unlist(blocks[-c(i)]), adjacent_block)
-      blocks[[i]] <- complement[order(complement)]
+    # |> # sample correct number of elements
+    #   utils::head(block_list[[i]]$block_size) # get number of elements needed.
+
+    # prioritize elements that were not previously used
+    if(i > 1){
+      complement_stem <- setdiff(complement, unlist(complement_list[i-1]))
+      complement <- unique(c(complement_stem, complement)) |> utils::head(BLOCK_SIZE)
     }
+    complement_list[[i]]  <- complement
+    # in_complements <- c(in_complements, unlist(complement))
   }
+
+  return(
+    list(
+      blocks = block_list,
+      complements = complement_list
+      )
+    )
+
 
   # Combine blocks back into resampled tags
   final_resampled_tags <- unlist(blocks)

@@ -1,9 +1,23 @@
 crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
                  replace = TRUE){
 
-  # Step 1: Tag values
-  grps <- names(dat) # Get group names
+  # Step 0: Get information
 
+  # get input dat type, count observations, coerce to data.frame
+  if(is.data.frame(dat)){
+    datdf <- TRUE
+    numobs <- ncol(dat)*nrow(dat)
+  } else if (is.vector(dat) & !is.list(dat)){
+    datdf <- FALSE
+    numobs <- length(dat)
+    dat <- data.frame("obs" = dat)
+  } else {
+    stop("dat must be a data.frame or a vector")
+  }
+
+  grps <- names(dat) # get group names
+
+  # Step 1: Tag values
   if (ncol(dat) > 1){
     # Initialize observation counter
     obscount <- 1
@@ -127,9 +141,39 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
     dat[[paste0(grps, "_rtag")]] <- final_resampled_tags
   }
 
-  return(list(dat = dat,
-         blocks = block_list,
-         complements = complement_list))
+  # Step 7: Map resampled tags back to original data
+
+  # create lookup
+  lookup <- vector(mode = "list", length = numobs)
+  for (col in grps) {
+    # Create a lookup table for each column
+    lookup_grp <- stats::setNames(dat[[col]], dat[[paste0(col, "_tag")]])
+    lookup <- c(lookup, lookup_grp)
+  }
+
+  # use the lookup table to map rtags back to original values
+  for (col in grps) {
+    dat[[paste0(col, "_resampled")]] <- lookup[as.character(dat[[paste0(col, "_rtag")]])]
+  }
+
+  # Step 8: Build return object
+  if (length(grps) > 1){
+    rdat <- dat[,grep("_resampled", names(dat), value = TRUE)] |>
+      stats::setNames(grps)
+  } else {
+    rdat <- dat[,ncol(dat)] |> unlist() |> as.vector()
+    if(datdf) rdat <- data.frame(grps = rdat) # ensure input/output same type
+  }
+
+
+  return(
+    list(
+      rdat = rdat,
+      lookup = lookup,
+      dat = dat,
+      blocks = block_list,
+      complements = complement_list)
+    )
 }
 
 

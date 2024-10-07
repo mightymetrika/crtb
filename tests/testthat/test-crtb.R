@@ -2,6 +2,9 @@ test_that("crtb works with one group", {
   dat <- data.frame(obs = rpois(6,5))
   out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
 
+  dat <- rpois(6,5)
+  out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
+
   expect_equal(2 * 2, 4)
 })
 

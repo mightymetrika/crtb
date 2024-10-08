@@ -1,5 +1,17 @@
 crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
                  replace = TRUE){
+  if(!pooled){
+    res <- crtb_np(dat = dat, tie_thresh = tie_thresh, replace = replace)
+  } else {
+    res <- crtb_p(dat = dat, rowwise = rowwise, tie_thresh = tie_thresh,
+                  replace = replace)
+  }
+
+  return(res)
+}
+
+crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
+                 replace = TRUE){
 
   # Step 0: Get information
 
@@ -46,12 +58,12 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
   }
 
   # Collect all tags into a single vector
-  tag_cols <- grep("_tag$", names(dat), value = TRUE)
-  all_tags <- unlist(dat[, tag_cols])
+    tag_cols <- grep("_tag$", names(dat), value = TRUE)
+    all_tags <- unlist(dat[, tag_cols])
 
-  if(!rowwise){
-    all_tags <- sort(all_tags)
-  }
+    if(!rowwise){
+      all_tags <- sort(all_tags)
+    }
 
   # Step 2: Resample tagged values
   resampled_tags <- sample(all_tags, replace = replace)
@@ -176,6 +188,42 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
     )
 }
 
+crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
+  # Check that dat is a data.frame
+  if (!is.data.frame(dat)) {
+    stop("dat must be a data.frame")
+  }
+
+  # Apply crtb to each column (group) separately
+  results <- lapply(dat, function(col) {
+    crtb(col, rowwise = TRUE, tie_thresh = tie_thresh, replace = replace)
+  })
+
+  # Extract the resampled data from each result
+  rdat_list <- lapply(results, function(res) {
+    # 'res$rdat' could be a vector or data.frame with one column
+    if (is.data.frame(res$rdat)) {
+      res$rdat[[1]]  # Extract the column as a vector
+    } else {
+      res$rdat
+    }
+  })
+
+  # Combine the resampled data into a data frame
+  rdat_df <- data.frame(rdat_list)
+  names(rdat_df) <- names(dat)
+
+  # Optionally, combine other components if needed
+  # For example, combining lookups or other diagnostics
+
+  # Return the resampled data and optionally the results list
+  return(
+    list(
+      rdat = rdat_df,
+      results = results
+    )
+  )
+}
 
 
 # crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,

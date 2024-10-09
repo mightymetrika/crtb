@@ -1,3 +1,67 @@
+#' Complementary Resampling in Blocks
+#'
+#' Performs complementary resampling in blocks on the provided dataset.
+#' This function implements the complementary pairs subsampling method, allowing
+#' for either pooled or non-pooled resampling of data groups. This method is
+#' inspired by the concept of complementary pairs subsampling, Shah & Samworth
+#' (2013), and attempts to approximate the method in the realm of resampling.
+#'
+#' @param dat A data frame or vector containing the data to resample.
+#'   If a data frame, each column represents a group or variable.
+#' @param pooled Logical; if \code{TRUE} (default), data from all groups are
+#'   pooled together for resampling. If \code{FALSE}, resampling is performed
+#'   separately for each group.
+#' @param rowwise Logical; applicable only when \code{pooled = TRUE}.
+#'   If \code{TRUE} (default), tagging is done row-wise across groups.
+#'   If \code{FALSE}, tagging is done column-wise within each group.
+#' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
+#'   too many ties in the resampled data. If the proportion of unique resampled
+#'   tags is less than \code{tie_thresh}, the function will return \code{NULL}
+#'   and issue a warning. Default is \code{0.5}.
+#' @param replace Logical; if \code{TRUE} (default), resampling is done with
+#'   replacement.
+#'
+#' @return A data frame or vector containing the resampled data, matching the
+#'   structure of the input \code{dat}. If \code{dat} is a data frame, the output
+#'   will be a data frame with the same column names.
+#'
+#' @details
+#' The \code{crtb} function implements complementary resampling of tags in blocks
+#' based on the concept of complementary pairs subsampling, Shah & Samworth (2013).
+#'
+#' When \code{pooled = TRUE}, data from all groups are pooled together, and
+#' resampling is performed using a combined tagging scheme.
+#'
+#' When \code{pooled = FALSE}, the function applies the resampling procedure
+#' separately to each group.
+#'
+#' Internally, the function calls either a pooled version or a non-pooled version
+#' of the resampling algorithm. This approach provides flexibility depending on
+#' whether the groups in the data should be treated together or separately.
+#'
+#'
+#' @references
+#' Shah, R. D., & Samworth, R. J. (2013). Variable Selection with Error Control:
+#' Another Look at Stability Selection. \emph{Journal of the Royal Statistical
+#' Society: Series B (Statistical Methodology)}, 75(1), 55–80.
+#' \doi{10.1111/j.1467-9868.2011.01034.x}
+#'
+#' @examples
+#' # Example with a data frame and pooled = TRUE
+#' data <- data.frame(group1 = rnorm(100), group2 = rnorm(100))
+#' resampled_data <- crtb(data)
+#'
+#' # Example with a data frame and pooled = FALSE
+#' resampled_data_np <- crtb(data, pooled = FALSE)
+#'
+#' # Example with a vector
+#' vector_data <- rnorm(100)
+#' resampled_vector <- crtb(vector_data)
+#'
+#' # Example with rowwise = FALSE (only when pooled = TRUE)
+#' resampled_data_colwise <- crtb(data, rowwise = FALSE)
+#'
+#' @export
 crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
                  replace = TRUE){
   if(!pooled){
@@ -10,6 +74,45 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
   return(res)
 }
 
+#' Complementary Resampling of Tags in Blocks (Pooled Version)
+#'
+#' Performs complementary resampling of tags in blocks on the provided dataset,
+#' pooling all groups together.
+#'
+#' @param dat A dataframe or vector containing the data to resample. If a
+#' dataframe, each column represents a group or variable.
+#' @param rowwise Logical; if \code{TRUE} (default), tagging is done row-wise
+#' across groups. If \code{FALSE}, tagging is done column-wise within each group.
+#' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
+#' too many ties in the resampled data. If the proportion of unique resampled tags
+#' is less than \code{tie_thresh}, the function will return \code{NULL} and issue
+#' a warning. Default is \code{0.5}.
+#' @param replace Logical; if \code{TRUE} (default), resampling is done with
+#' replacement.
+#'
+#' @return A data frame or vector containing the resampled data, matching the
+#' structure of the input \code{dat}. If \code{dat} is a data frame, the output
+#' will be a data frame with the same column names.
+#'
+#' @details
+#' The function operates by assigning unique tags to each observation in the data.
+#' It then resamples these tags (with or without replacement) and rearranges the
+#' data into blocks and their complements. This approach ensures that each observation
+#' is either included in a block or its complement, which may enhance the performance
+#' of resampling-based methods.
+#'
+#' If the proportion of unique resampled tags is below the \code{tie_thresh}, the
+#' function considers there to be too many ties (duplicate tags) and returns
+#' \code{NULL} with a warning. This is to prevent unreliable results due to
+#' insufficient variability in the resampled data.
+#'
+#' @note
+#' The method is particularly useful in situations where the standard bootstrap
+#' may not be appropriate due to dependencies within the data
+#' or the need for improved stability in variable selection procedures.
+#'
+#'
+#' @keywords internal
 crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
                  replace = TRUE){
 
@@ -74,11 +177,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
     return(NULL)
   }
 
-  # Step 4: Increment usage counter
-  used <- 0
-  used <- used + 1
-
-  # Step 5: Rearrange into blocks with complements
+  # Step 4: Rearrange into blocks with complements
   block_list <- list() # initialize list
   BLOCK_SIZE <- block_size <- floor(length(all_tags) / 2) # get block size (CONSTANT and variable)
   remaining_rtags <- resampled_tags # get resampled tags
@@ -117,7 +216,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
     i = i + 1
   }
 
-  # Steps 6: Get complement of each block
+  # Steps 5: Get complement of each block
   complement_list <- vector(mode = "list", length = length(block_list)) # initialize list
   for (i in seq_along(block_list)) {
     complement_list[[i]] <- setdiff(all_tags, block_list[[i]]$block) |> # complement
@@ -153,7 +252,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
     dat[[paste0(grps, "_rtag")]] <- final_resampled_tags
   }
 
-  # Step 7: Map resampled tags back to original data
+  # Step 6: Map resampled tags back to original data
 
   # create lookup
   lookup <- vector(mode = "list", length = numobs)
@@ -168,27 +267,61 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
     dat[[paste0(col, "_resampled")]] <- lookup[as.character(dat[[paste0(col, "_rtag")]])]
   }
 
-  # Step 8: Build return object
+  # Step 7: Build return object
   if (length(grps) > 1){
     rdat <- dat[,grep("_resampled", names(dat), value = TRUE)] |>
       stats::setNames(grps)
   } else {
     rdat <- dat[,ncol(dat)] |> unlist() |> as.vector()
-    if(datdf) rdat <- data.frame(grps = rdat) # ensure input/output same type
+    if(datdf) rdat <- as.data.frame(rdat) |> stats::setNames(grps) # ensure input/output same type
   }
 
+  return(rdat)
 
-  return(
-    list(
-      rdat = rdat,
-      lookup = lookup,
-      dat = dat,
-      blocks = block_list,
-      complements = complement_list)
-    )
+  # Use following output for research purposes
+  # return(
+  #   list(
+  #     rdat = rdat,
+  #     lookup = lookup,
+  #     dat = dat,
+  #     blocks = block_list,
+  #     complements = complement_list)
+  #   )
+
 }
 
+#' Complementary Resampling of Tags in Blocks (Non-Pooled Version)
+#'
+#' Performs complementary resampling of tags in blocks on the provided data
+#' without pooling the groups. This function applies the resampling procedure
+#' separately to each group (column) in the data, which can be useful when groups
+#' are independent or should not be combined.
+#'
+#' @param dat A data frame containing the data to resample. Each column represents
+#' a group or variable.
+#' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
+#' too many ties in the resampled data. If the proportion of unique resampled tags
+#' is less than \code{tie_thresh}, the function will return \code{NULL} for that
+#' group and issue a warning. Default is \code{0.5}.
+#' @param replace Logical; if \code{TRUE} (default), resampling is done with replacement.
+#'
+#' @return A data frame containing the resampled data, matching the structure of
+#' the input \code{dat}. Each column is the result of applying \code{crtb_p} to
+#' the corresponding column in \code{dat}.
+#'
+#' @details
+#' The function applies the complementary resampling method implemented in
+#' \code{\link{crtb_p}} to each group separately, without pooling the data. This
+#' is useful in contexts where the groups are independent or when pooling the data
+#' may not be appropriate.
+#'
+#' @note
+#' If any group results in too many ties (based on \code{tie_thresh}), the
+#' function will return \code{NULL} for that group, and a warning will be issued.
+#'
+#' @keywords internal
 crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
+
   # Check that dat is a data.frame
   if (!is.data.frame(dat)) {
     stop("dat must be a data.frame")
@@ -201,11 +334,11 @@ crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
 
   # Extract the resampled data from each result
   rdat_list <- lapply(results, function(res) {
-    # 'res$rdat' could be a vector or data.frame with one column
-    if (is.data.frame(res$rdat)) {
-      res$rdat[[1]]  # Extract the column as a vector
+    # 'res' could be a vector or data.frame with one column
+    if (is.data.frame(res)) {
+      res[[1]]  # Extract the column as a vector
     } else {
-      res$rdat
+      res
     }
   })
 
@@ -213,182 +346,5 @@ crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
   rdat_df <- data.frame(rdat_list)
   names(rdat_df) <- names(dat)
 
-  # Optionally, combine other components if needed
-  # For example, combining lookups or other diagnostics
-
-  # Return the resampled data and optionally the results list
-  return(
-    list(
-      rdat = rdat_df,
-      results = results
-    )
-  )
+  return(rdat_df)
 }
-
-
-# crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
-#                  replace = TRUE){
-#
-#   # Original Algorithm (The steps in the code below have been renumbered.)
-#   # 1: create values
-#   # 2: If more than one group, decide if resampling will be pooled
-#   # 3: If pooled, decide if tagging will take place rowwise or column wise
-#   # 4: tag values (create a dictionary where each entry is given a unique value)
-#   # 5: resample tagged values
-#   # 6: decide if too many ties to use method
-#   # 7: add one to "used" if using method
-#   # 8: rearrange into blocks with compliments
-#   # 9: within block get order of tags
-#   # 10: within complement of block get order of tags
-#   # 11: replace block resample tags with block complement tags
-#   # 12: repeat for other blocks with tags
-#   # 13: for fragments of blocks with incomplete complements, reorder to top and use piece of adjacent block as needed to determine complements
-#
-#   # Step 1: Tag values
-#   grps <- names(dat) # Get group names
-#
-#   if (ncol(dat) > 1){
-#     # Initialize observation counter
-#     obscount <- 1
-#
-#     # Tag values
-#     if (rowwise) {
-#       # Row-wise tagging (same as before)
-#       for(i in grps){
-#         dat[[paste0(i, "_tag")]] <- obscount:(obscount + nrow(dat) - 1)
-#         obscount <- obscount + nrow(dat)
-#       }
-#     } else {
-#       # Column-wise tagging
-#       for(i in 1:nrow(dat)){
-#         for(j in grps){
-#           # Assign unique tags to each value across columns for each row
-#           dat[[paste0(j, "_tag")]][i] <- obscount
-#           obscount <- obscount + 1
-#         }
-#       }
-#     }
-#
-#   } else {
-#     # Handle single column case
-#     dat[[paste0(grps, "_tag")]] <- 1:nrow(dat)
-#   }
-#
-#   # Collect all tags into a single vector
-#   tag_cols <- grep("_tag$", names(dat), value = TRUE)
-#   all_tags <- unlist(dat[, tag_cols])
-#
-#   if(!rowwise){
-#     all_tags <- sort(all_tags)
-#   }
-#
-#   # Step 2: Resample tagged values
-#   resampled_tags <- sample(all_tags, replace = replace)
-#
-#   # Step 3: Decide if too many ties to use method
-#   if (length(unique(resampled_tags)) < length(resampled_tags) * tie_thresh) {
-#     warning("Too many ties to use the method")
-#     return(NULL)
-#   }
-#
-#   # Step 4: Increment usage counter
-#   used <- 0
-#   used <- used + 1
-#
-#   # Step 5: Rearrange into blocks with complements
-#   block_list <- list() # initialize list
-#   BLOCK_SIZE <- block_size <- floor(length(all_tags) / 2) # get block size (CONSTANT and variable)
-#   remaining_rtags <- loop_rtags <- resampled_tags # get resampled tags
-#   i <- 1 # initialize iterator (for naming blocks)
-#
-#   # build blocks
-#   while(length(remaining_rtags) > 1){
-#     if (i == 1){
-#       # Get block1 (first block with a resample in resampled_tags)
-#       block <- unique(loop_rtags) |> utils::head(block_size)
-#       block_stem = block
-#
-#       # Save block
-#       block_list[[paste0("block",i)]] <- list(block = block,
-#                                               block_size = block_size)
-#     } else {
-#       # Get block_loop not represented in block 1
-#       remaining_rtags <- remaining_rtags[-match(block_stem, remaining_rtags)]
-#       if (length(remaining_rtags) == 0) break
-#
-#       # Get remaining unique tags from remaining_rtags
-#       block_stem <- unique(remaining_rtags)
-#       block_size <- length(block_stem)
-#
-#       # Get remainder of resampled tags
-#       # add unique remaining tags (block_stem) onto loop_rtags
-#       loop_rtags <- c(block_stem, loop_rtags)
-#       # combine the block_stem with enough elements of loop_rtags to form a full block
-#       block <- loop_rtags |> unique() |> utils::head(BLOCK_SIZE)
-#       # remove elements from loop_rtags which were used to help fill out the block
-#       loop_rtags <- loop_rtags[-match(block |> utils::tail(BLOCK_SIZE - block_size), loop_rtags)]
-#
-#       # Save block
-#       block_list[[paste0("block",i)]] <- list(block = block,
-#                                               block_size = block_size)
-#     }
-#
-#     i = i + 1
-#   }
-#
-#   # return(block_list)
-#   #
-#   # block_size <- 5  # Example block size
-#   # blocks <- split(resampled_tags, ceiling(seq_along(resampled_tags)/block_size))
-#
-#   # Get complement of each block
-#
-#   # Steps 6: Process blocks
-#   complement_list <- vector(mode = "list", length = length(block_list)) # initialize list
-#   # in_complements <- vector(mode = "numeric")
-#   for (i in seq_along(block_list)) {
-#     # get complement of the block
-#     # complement <- unlist(blocks[-i])
-#     # complement_list[[i]] <- setdiff(all_tags, block_list[[i]]$block) |> #complement
-#     #   sample(BLOCK_SIZE, replace = FALSE) |> # sample correct number of elements
-#     #   utils::head(block_list[[i]]$block_size) # get number of elements needed.
-#
-#     complement <- setdiff(all_tags, block_list[[i]]$block) #|> #complement
-#       #sample(BLOCK_SIZE, replace = FALSE)
-#
-#     # complement <- complement[order(match(complement |> as.factor() |> as.numeric(),
-#     #                                      block_list[[i]]$block |> as.factor() |> as.numeric()))]
-#
-#
-#     # |> # sample correct number of elements
-#     #   utils::head(block_list[[i]]$block_size) # get number of elements needed.
-#
-#     # prioritize elements that were not previously used
-#     if(i > 1){
-#       complement_stem <- setdiff(complement, unlist(complement_list[i-1]))
-#       complement <- unique(c(complement_stem, complement)) |> utils::head(BLOCK_SIZE)
-#     }
-#     complement_list[[i]]  <- complement
-#     # in_complements <- c(in_complements, unlist(complement))
-#   }
-#
-#   return(
-#     list(
-#       blocks = block_list,
-#       complements = complement_list
-#       )
-#     )
-#
-#
-#   # Combine blocks back into resampled tags
-#   final_resampled_tags <- unlist(blocks)
-#
-#   # Map resampled tags back to data
-#   if (tagging_dimension == "row") {
-#     resampled_data <- dat[match(final_resampled_tags, dat$tag), ]
-#   } else {
-#     resampled_data <- dat[, names(final_resampled_tags)]
-#   }
-#
-#   return(resampled_data)
-# }

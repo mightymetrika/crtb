@@ -1,38 +1,89 @@
-test_that("crtb works with one group", {
+test_that("crtb works with one group as a data frame", {
+
   dat <- data.frame(obs = rpois(6,5))
   out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
+
+  expect_equal(length(dat), length(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+})
+
+test_that("crtb works with one group as a vector", {
 
   dat <- rpois(6,5)
   out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
 
-  expect_equal(2 * 2, 4)
+  expect_equal(length(dat), length(out))
+  expect_null(names(out))
+  expect_vector(out, size = 6)
 })
 
-
 test_that("crtb works with rowwise with multiple groups", {
+
   dat <- data.frame(obs1 = rpois(6,5),
                     obs2 = rpois(6,5),
                     obs3 = rbinom(6,10, 0.5))
+
+  # run resampling with replacement
+  out <- crtb(dat, rowwise = TRUE)
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+  rm(out)
+
+
+  # run resampling without replacement
   out <- crtb(dat, rowwise = TRUE, replace = FALSE)
 
-  expect_equal(2 * 2, 4)
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+
 })
 
 test_that("crtb works with colwise with multiple groups", {
+
   dat <- data.frame(obs1 = rpois(6,5),
                     obs2 = rpois(6,5),
                     obs3 = rbinom(6,10, 0.5))
-  out <- crtb(dat, pooled = TRUE, rowwise = FALSE)
 
-  expect_equal(2 * 2, 4)
+  # run resampling with replacement
+  out <- crtb(dat, rowwise = FALSE)
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+  rm(out)
+
+  # run resampling without replacement
+  out <- crtb(dat, rowwise = FALSE, replace = FALSE)
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
 })
 
 
 test_that("crtb works with pooled = FALSE", {
+
   dat <- data.frame(obs1 = rpois(6,5),
                     obs2 = rpois(6,5),
                     obs3 = rbinom(6,10, 0.5))
+
+  # run resampling with replacement
   out <- crtb(dat, pooled = FALSE)
 
-  expect_equal(2 * 2, 4)
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+  rm(out)
+
+  # run resampling without replacement
+  out <- crtb(dat, pooled = FALSE, replace = FALSE)
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_s3_class(out, "data.frame")
+
 })

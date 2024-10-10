@@ -224,69 +224,102 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
       utils::head(block_list[[i]]$block_size) # get number of elements needed.
   }
 
-  # Combine blocks back into resampled tags
+  # Combine complementary blocks and the original resampled tags back into the
+  # data structure in preparation for mapping of tags back onto data values
   final_resampled_tags <- unlist(complement_list)
+  odat <- dat # need original data for original resamples
+  resampled_tags <- as.vector(resampled_tags)
   if (ncol(dat) > 1){
 
     # Tag values
     if (rowwise) {
       # Row-wise tagging (same as before)
       for(i in grps){
-        frtags <-
+        # complements
         dat[[paste0(i, "_rtag")]] <- final_resampled_tags |> utils::head(nrow(dat))
         final_resampled_tags <- final_resampled_tags |> utils::tail(-nrow(dat))
+
+        # orignal resample
+        odat[[paste0(i, "_rtag")]] <- resampled_tags |> utils::head(nrow(odat))
+        resampled_tags <- resampled_tags |> utils::tail(-nrow(odat))
       }
     } else {
       # Column-wise tagging
       for(i in 1:nrow(dat)){
         for(j in grps){
           # Assign unique tags to each value across columns for each row
+
+          # complement
           dat[[paste0(j, "_rtag")]][i] <- final_resampled_tags |> utils::head(1)
           final_resampled_tags <- final_resampled_tags |> utils::tail(-1)
+
+          # original resample
+          odat[[paste0(j, "_rtag")]][i] <- resampled_tags |> utils::head(1)
+          resampled_tags <- resampled_tags |> utils::tail(-1)
         }
       }
     }
 
   } else {
     # Handle single column case
-    dat[[paste0(grps, "_rtag")]] <- final_resampled_tags
+    dat[[paste0(grps, "_rtag")]] <- final_resampled_tags # complement
+    odat[[paste0(grps, "_rtag")]] <- resampled_tags # original resample
   }
 
   # Step 6: Map resampled tags back to original data
 
   # create lookup
   lookup <- vector(mode = "list", length = numobs)
+  olookup <- vector(mode = "list", length = numobs)
   for (col in grps) {
     # Create a lookup table for each column
+
+    # complement
     lookup_grp <- stats::setNames(dat[[col]], dat[[paste0(col, "_tag")]])
     lookup <- c(lookup, lookup_grp)
+
+    # orignal resample
+    olookup_grp <- stats::setNames(odat[[col]], odat[[paste0(col, "_tag")]])
+    olookup <- c(olookup, olookup_grp)
   }
 
   # use the lookup table to map rtags back to original values
   for (col in grps) {
+    # complement
     dat[[paste0(col, "_resampled")]] <- lookup[as.character(dat[[paste0(col, "_rtag")]])]
+    # orignal resample
+    odat[[paste0(col, "_resampled")]] <- olookup[as.character(odat[[paste0(col, "_rtag")]])]
   }
 
   # Step 7: Build return object
   if (length(grps) > 1){
+
+    # complement
     rdat <- dat[,grep("_resampled", names(dat), value = TRUE)] |>
       stats::setNames(grps)
+    # orignal resample
+    ordat <- odat[,grep("_resampled", names(odat), value = TRUE)] |>
+      stats::setNames(grps)
   } else {
+    #complement
     rdat <- dat[,ncol(dat)] |> unlist() |> as.vector()
     if(datdf) rdat <- as.data.frame(rdat) |> stats::setNames(grps) # ensure input/output same type
+
+    # orignal resample
+    ordat <- odat[,ncol(odat)] |> unlist() |> as.vector()
+    if(datdf) ordat <- as.data.frame(ordat) |> stats::setNames(grps) # ensure input/output same type
   }
 
-  return(rdat)
+  # return(rdat)
 
-  # Use following output for research purposes
-  # return(
-  #   list(
-  #     rdat = rdat,
-  #     lookup = lookup,
-  #     dat = dat,
-  #     blocks = block_list,
-  #     complements = complement_list)
-  #   )
+  #Use following output for research purposes
+  return(
+    list(
+      crdat = rdat, # complementary
+      ordat = ordat # orignal resample
+    )
+    )
+
 
 }
 
@@ -317,7 +350,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #'
 #' @note
 #' If any group results in too many ties (based on \code{tie_thresh}), the
-#' function will return \code{NULL} for that group, and a warning will be issued.
+#' function will return \code{NULL} and a warning will be issued.
 #'
 #' @keywords internal
 crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
@@ -332,13 +365,27 @@ crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
     crtb(col, rowwise = TRUE, tie_thresh = tie_thresh, replace = replace)
   })
 
+  # Check if any results are NULL
+  if (any(sapply(results, is.null))) {
+    return(NULL)
+  }
+
   # Extract the resampled data from each result
   rdat_list <- lapply(results, function(res) {
     # 'res' could be a vector or data.frame with one column
-    if (is.data.frame(res)) {
-      res[[1]]  # Extract the column as a vector
+    if (is.data.frame(res$crdat)) {
+      res$crdat[[1]]  # Extract the column as a vector
     } else {
-      res
+      res$crdat
+    }
+  })
+
+  odat_list <- lapply(results, function(res) {
+    # 'res' could be a vector or data.frame with one column
+    if (is.data.frame(res$ordat)) {
+      res$ordat[[1]]  # Extract the column as a vector
+    } else {
+      res$ordat
     }
   })
 
@@ -346,5 +393,10 @@ crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
   rdat_df <- data.frame(rdat_list)
   names(rdat_df) <- names(dat)
 
-  return(rdat_df)
+  # Combine the resampled data into a data frame
+  odat_df <- data.frame(odat_list)
+  names(odat_df) <- names(dat)
+
+  return(list(crdat = rdat_df,
+              ordat = odat_df))
 }

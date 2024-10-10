@@ -36,6 +36,6 @@ may not be appropriate.
 }
 \note{
 If any group results in too many ties (based on \code{tie_thresh}), the
-function will return \code{NULL} for that group, and a warning will be issued.
+function will return \code{NULL} and a warning will be issued.
 }
 \keyword{internal}

@@ -3,9 +3,9 @@ test_that("crtb works with one group as a data frame", {
   dat <- data.frame(obs = rpois(6,5))
   out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
 
-  expect_equal(length(dat), length(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(length(dat), length(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
 })
 
 test_that("crtb works with one group as a vector", {
@@ -13,9 +13,9 @@ test_that("crtb works with one group as a vector", {
   dat <- rpois(6,5)
   out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
 
-  expect_equal(length(dat), length(out))
-  expect_null(names(out))
-  expect_vector(out, size = 6)
+  expect_equal(length(dat), length(out$crdat))
+  expect_null(names(out$crdat))
+  expect_vector(out$crdat, size = 6)
 })
 
 test_that("crtb works with rowwise with multiple groups", {
@@ -27,18 +27,18 @@ test_that("crtb works with rowwise with multiple groups", {
   # run resampling with replacement
   out <- crtb(dat, rowwise = TRUE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
   rm(out)
 
 
   # run resampling without replacement
   out <- crtb(dat, rowwise = TRUE, replace = FALSE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
 
 })
 
@@ -51,17 +51,17 @@ test_that("crtb works with colwise with multiple groups", {
   # run resampling with replacement
   out <- crtb(dat, rowwise = FALSE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
   rm(out)
 
   # run resampling without replacement
   out <- crtb(dat, rowwise = FALSE, replace = FALSE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
 })
 
 
@@ -74,16 +74,16 @@ test_that("crtb works with pooled = FALSE", {
   # run resampling with replacement
   out <- crtb(dat, pooled = FALSE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
   rm(out)
 
   # run resampling without replacement
   out <- crtb(dat, pooled = FALSE, replace = FALSE)
 
-  expect_equal(nrow(dat), nrow(out))
-  expect_equal(names(dat), names(out))
-  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
 
 })

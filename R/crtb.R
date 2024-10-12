@@ -20,10 +20,14 @@
 #'   and issue a warning. Default is \code{0.5}.
 #' @param replace Logical; if \code{TRUE} (default), resampling is done with
 #'   replacement.
+#' @param sample_fun A user-defined function for custom sampling. This function
+#'   should accept a vector of tags (the data to be resampled) and return a
+#'   resampled vector of the same length. If \code{NULL} (default), the standard
+#'   \code{sample} function is used with the \code{replace} argument.
 #'
-#' @return A data frame or vector containing the resampled data, matching the
-#'   structure of the input \code{dat}. If \code{dat} is a data frame, the output
-#'   will be a data frame with the same column names.
+#' @return A list containing two elements:
+#'   \item{crdat}{The complementary resampled data.}
+#'   \item{ordat}{The original resampled data.}
 #'
 #' @details
 #' The \code{crtb} function implements complementary resampling of tags in blocks
@@ -61,14 +65,22 @@
 #' # Example with rowwise = FALSE (only when pooled = TRUE)
 #' resampled_data_colwise <- crtb(data, rowwise = FALSE)
 #'
+#' # Custom sampling function
+#' sample_fun <- function(x) {
+#'   return(sample(x, replace = TRUE))
+#' }
+#'
+#' out_custom <- crtb(data, rowwise = TRUE, sample_fun = sample_fun)
+#'
 #' @export
 crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
-                 replace = TRUE){
+                 replace = TRUE, sample_fun = NULL){
   if(!pooled){
-    res <- crtb_np(dat = dat, tie_thresh = tie_thresh, replace = replace)
+    res <- crtb_np(dat = dat, tie_thresh = tie_thresh, replace = replace,
+                   sample_fun = sample_fun)
   } else {
     res <- crtb_p(dat = dat, rowwise = rowwise, tie_thresh = tie_thresh,
-                  replace = replace)
+                  replace = replace, sample_fun = sample_fun)
   }
 
   return(res)
@@ -80,19 +92,23 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
 #' pooling all groups together.
 #'
 #' @param dat A dataframe or vector containing the data to resample. If a
-#' dataframe, each column represents a group or variable.
+#'   dataframe, each column represents a group or variable.
 #' @param rowwise Logical; if \code{TRUE} (default), tagging is done row-wise
-#' across groups. If \code{FALSE}, tagging is done column-wise within each group.
+#'   across groups. If \code{FALSE}, tagging is done column-wise within each group.
 #' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
-#' too many ties in the resampled data. If the proportion of unique resampled tags
-#' is less than \code{tie_thresh}, the function will return \code{NULL} and issue
-#' a warning. Default is \code{0.5}.
+#'   too many ties in the resampled data. If the proportion of unique resampled tags
+#'   is less than \code{tie_thresh}, the function will return \code{NULL} and issue
+#'   a warning. Default is \code{0.5}.
 #' @param replace Logical; if \code{TRUE} (default), resampling is done with
-#' replacement.
+#'   replacement.
+#' @param sample_fun A user-defined function for custom sampling. This function
+#'   should accept a vector of tags (the data to be resampled) and return a
+#'   resampled vector of the same length. If \code{NULL} (default), the standard
+#'   \code{sample} function is used with the \code{replace} argument.
 #'
-#' @return A data frame or vector containing the resampled data, matching the
-#' structure of the input \code{dat}. If \code{dat} is a data frame, the output
-#' will be a data frame with the same column names.
+#' @return A list containing two elements:
+#'   \item{crdat}{The complementary resampled data.}
+#'   \item{ordat}{The original resampled data.}
 #'
 #' @details
 #' The function operates by assigning unique tags to each observation in the data.
@@ -114,7 +130,7 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
 #'
 #' @keywords internal
 crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
-                 replace = TRUE){
+                   replace = TRUE, sample_fun = NULL){
 
   # Step 0: Get information
 
@@ -161,15 +177,25 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
   }
 
   # Collect all tags into a single vector
-    tag_cols <- grep("_tag$", names(dat), value = TRUE)
-    all_tags <- unlist(dat[, tag_cols])
+  tag_cols <- grep("_tag$", names(dat), value = TRUE)
+  all_tags <- unlist(dat[, tag_cols])
 
-    if(!rowwise){
-      all_tags <- sort(all_tags)
-    }
+  if(!rowwise){
+    all_tags <- sort(all_tags)
+  }
 
   # Step 2: Resample tagged values
-  resampled_tags <- sample(all_tags, replace = replace)
+  if(is.null(sample_fun)){
+    resampled_tags <- sample(all_tags, replace = replace)
+  } else {
+    if(!is.function(sample_fun)){
+      stop("sample_fun must be a function")
+    }
+    resampled_tags <- sample_fun(all_tags)
+    if(length(resampled_tags) != length(all_tags)){
+      stop("sample_fun must return a vector of the same length as its input")
+    }
+  }
 
   # Step 3: Decide if too many ties to use method
   if (length(unique(resampled_tags)) < length(resampled_tags) * tie_thresh) {
@@ -310,8 +336,6 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
     if(datdf) ordat <- as.data.frame(ordat) |> stats::setNames(grps) # ensure input/output same type
   }
 
-  # return(rdat)
-
   #Use following output for research purposes
   return(
     list(
@@ -331,16 +355,21 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #' are independent or should not be combined.
 #'
 #' @param dat A data frame containing the data to resample. Each column represents
-#' a group or variable.
+#'   a group or variable.
 #' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
-#' too many ties in the resampled data. If the proportion of unique resampled tags
-#' is less than \code{tie_thresh}, the function will return \code{NULL} for that
-#' group and issue a warning. Default is \code{0.5}.
-#' @param replace Logical; if \code{TRUE} (default), resampling is done with replacement.
+#'   too many ties in the resampled data. If the proportion of unique resampled
+#'   tags is less than \code{tie_thresh}, the function will return \code{NULL}
+#'   for that group and issue a warning. Default is \code{0.5}.
+#' @param replace Logical; if \code{TRUE} (default), resampling is done with
+#'   replacement.
+#' @param sample_fun A user-defined function for custom sampling. This function
+#'   should accept a vector of tags (the data to be resampled) and return a
+#'   resampled vector of the same length. If \code{NULL} (default), the standard
+#'   \code{sample} function is used with the \code{replace} argument.
 #'
-#' @return A data frame containing the resampled data, matching the structure of
-#' the input \code{dat}. Each column is the result of applying \code{crtb_p} to
-#' the corresponding column in \code{dat}.
+#' @return A list containing two elements:
+#'   \item{crdat}{The complementary resampled data.}
+#'   \item{ordat}{The original resampled data.}
 #'
 #' @details
 #' The function applies the complementary resampling method implemented in
@@ -353,7 +382,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #' function will return \code{NULL} and a warning will be issued.
 #'
 #' @keywords internal
-crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
+crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL) {
 
   # Check that dat is a data.frame
   if (!is.data.frame(dat)) {
@@ -362,7 +391,8 @@ crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE) {
 
   # Apply crtb to each column (group) separately
   results <- lapply(dat, function(col) {
-    crtb(col, rowwise = TRUE, tie_thresh = tie_thresh, replace = replace)
+    crtb(col, rowwise = TRUE, tie_thresh = tie_thresh, replace = replace,
+         sample_fun = sample_fun)
   })
 
   # Check if any results are NULL

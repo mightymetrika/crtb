@@ -4,7 +4,13 @@
 \alias{crtb_p}
 \title{Complementary Resampling of Tags in Blocks (Pooled Version)}
 \usage{
-crtb_p(dat, rowwise = TRUE, tie_thresh = 0.5, replace = TRUE)
+crtb_p(
+  dat,
+  rowwise = TRUE,
+  tie_thresh = 0.5,
+  replace = TRUE,
+  sample_fun = NULL
+)
 }
 \arguments{
 \item{dat}{A dataframe or vector containing the data to resample. If a
@@ -20,11 +26,16 @@ a warning. Default is \code{0.5}.}
 
 \item{replace}{Logical; if \code{TRUE} (default), resampling is done with
 replacement.}
+
+\item{sample_fun}{A user-defined function for custom sampling. This function
+should accept a vector of tags (the data to be resampled) and return a
+resampled vector of the same length. If \code{NULL} (default), the standard
+\code{sample} function is used with the \code{replace} argument.}
 }
 \value{
-A data frame or vector containing the resampled data, matching the
-structure of the input \code{dat}. If \code{dat} is a data frame, the output
-will be a data frame with the same column names.
+A list containing two elements:
+\item{crdat}{The complementary resampled data.}
+\item{ordat}{The original resampled data.}
 }
 \description{
 Performs complementary resampling of tags in blocks on the provided dataset,

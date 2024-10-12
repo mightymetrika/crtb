@@ -4,23 +4,29 @@
 \alias{crtb_np}
 \title{Complementary Resampling of Tags in Blocks (Non-Pooled Version)}
 \usage{
-crtb_np(dat, tie_thresh = 0.5, replace = TRUE)
+crtb_np(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL)
 }
 \arguments{
 \item{dat}{A data frame containing the data to resample. Each column represents
 a group or variable.}
 
 \item{tie_thresh}{Numeric; a threshold between 0 and 1 to decide if there are
-too many ties in the resampled data. If the proportion of unique resampled tags
-is less than \code{tie_thresh}, the function will return \code{NULL} for that
-group and issue a warning. Default is \code{0.5}.}
+too many ties in the resampled data. If the proportion of unique resampled
+tags is less than \code{tie_thresh}, the function will return \code{NULL}
+for that group and issue a warning. Default is \code{0.5}.}
 
-\item{replace}{Logical; if \code{TRUE} (default), resampling is done with replacement.}
+\item{replace}{Logical; if \code{TRUE} (default), resampling is done with
+replacement.}
+
+\item{sample_fun}{A user-defined function for custom sampling. This function
+should accept a vector of tags (the data to be resampled) and return a
+resampled vector of the same length. If \code{NULL} (default), the standard
+\code{sample} function is used with the \code{replace} argument.}
 }
 \value{
-A data frame containing the resampled data, matching the structure of
-the input \code{dat}. Each column is the result of applying \code{crtb_p} to
-the corresponding column in \code{dat}.
+A list containing two elements:
+\item{crdat}{The complementary resampled data.}
+\item{ordat}{The original resampled data.}
 }
 \description{
 Performs complementary resampling of tags in blocks on the provided data

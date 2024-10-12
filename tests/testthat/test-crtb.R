@@ -67,9 +67,9 @@ test_that("crtb works with colwise with multiple groups", {
 
 test_that("crtb works with pooled = FALSE", {
 
-  dat <- data.frame(obs1 = rpois(6,5),
-                    obs2 = rpois(6,5),
-                    obs3 = rbinom(6,10, 0.5))
+  dat <- data.frame(obs1 = rpois(14,5),
+                    obs2 = rpois(14,5),
+                    obs3 = rbinom(14,10, 0.5))
 
   # run resampling with replacement
   out <- crtb(dat, pooled = FALSE)
@@ -86,4 +86,65 @@ test_that("crtb works with pooled = FALSE", {
   expect_equal(names(dat), names(out$crdat))
   expect_s3_class(out$crdat, "data.frame")
 
+})
+
+test_that("crtb works with custom sample_fun", {
+
+  dat <- data.frame(obs1 = rpois(6,5),
+                    obs2 = rpois(6,5),
+                    obs3 = rbinom(6,10, 0.5))
+
+  # Define a sample function that returns the data in reverse order
+  sample_fun <- function(x) {
+    return(rev(x))
+  }
+
+  # Run resampling with sample_fun
+  out <- crtb(dat, rowwise = TRUE, sample_fun = sample_fun)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+
+  # Additional checks to ensure sample_fun was applied
+  expect_false(identical(dat, out$crdat))
+})
+
+test_that("crtb works with custom sample_fun and pooled = FALSE", {
+
+  dat <- data.frame(obs1 = rpois(14,5),
+                    obs2 = rpois(14,5),
+                    obs3 = rbinom(14,10, 0.5))
+
+  # Define a sample function that returns the data in reverse order
+  sample_fun <- function(x) {
+    return(rev(x))
+  }
+
+  # Run resampling with sample_fun
+  out <- crtb(dat, rowwise = TRUE, sample_fun = sample_fun, pooled = FALSE)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+
+  # Additional checks to ensure sample_fun was applied
+  expect_false(identical(dat, out$crdat))
+})
+
+
+test_that("crtb errors with invalid sample_fun", {
+
+  dat <- data.frame(obs1 = rpois(6,5),
+                    obs2 = rpois(6,5),
+                    obs3 = rbinom(6,10, 0.5))
+
+  # sample_fun is not a function
+  expect_error(crtb(dat, rowwise = TRUE, sample_fun = 123), "sample_fun must be a function")
+
+  # sample_fun returns wrong length
+  sample_fun <- function(x) {
+    return(sample(x, size = length(x)-1))
+  }
+  expect_error(crtb(dat, rowwise = TRUE, sample_fun = sample_fun), "sample_fun must return a vector of the same length as its input")
 })

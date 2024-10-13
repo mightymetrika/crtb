@@ -148,3 +148,71 @@ test_that("crtb errors with invalid sample_fun", {
   }
   expect_error(crtb(dat, rowwise = TRUE, sample_fun = sample_fun), "sample_fun must return a vector of the same length as its input")
 })
+
+test_that("crtb works with odd number of observations and one group as a data frame", {
+
+  dat <- data.frame(obs = rpois(7,5))
+  out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
+
+  expect_equal(length(dat), length(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+})
+
+test_that("crtb works with odd number of observations and one group as a vector", {
+
+  dat <- rpois(7,5)
+  out <- crtb(dat, pooled = TRUE, rowwise = TRUE)
+
+  expect_equal(length(dat), length(out$crdat))
+  expect_null(names(out$crdat))
+  expect_vector(out$crdat, size = 7)
+})
+
+test_that("crtb works with odd number of observations and rowwise = TRUE", {
+
+  dat <- data.frame(obs1 = rpois(7,5),
+                    obs2 = rpois(7,5),
+                    obs3 = rbinom(7,10, 0.5))
+
+  # run resampling with replacement
+  out <- crtb(dat, rowwise = TRUE)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+  rm(out)
+
+
+  # run resampling without replacement
+  out <- crtb(dat, rowwise = TRUE, replace = FALSE)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+
+})
+
+test_that("crtb works with odd number of pbservations and pooled = FALSE", {
+
+  dat <- data.frame(obs1 = rpois(15,5),
+                    obs2 = rpois(15,5),
+                    obs3 = rbinom(15,10, 0.5))
+
+  # run resampling with replacement
+  out <- crtb(dat, pooled = FALSE)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+  rm(out)
+
+  # run resampling without replacement
+  out <- crtb(dat, pooled = FALSE, replace = FALSE)
+
+  expect_equal(nrow(dat), nrow(out$crdat))
+  expect_equal(names(dat), names(out$crdat))
+  expect_s3_class(out$crdat, "data.frame")
+
+})
+

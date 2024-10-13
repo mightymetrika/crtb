@@ -210,7 +210,8 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
   i <- 1 # initialize iterator (for naming blocks)
 
   # build blocks
-  while(length(remaining_rtags) > 1){
+  # while(length(remaining_rtags) > 1){
+  while(length(remaining_rtags) > 0){
     if (i == 1){
       # Get block1 (first block with a resample in resampled_tags)
       block <- unique(remaining_rtags) |> utils::head(block_size)
@@ -225,8 +226,15 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
       if (length(remaining_rtags) == 0) break
 
       # Get remaining unique tags from remaining_rtags
-      block_stem <- unique(remaining_rtags)
-      block_size <- length(block_stem)
+      if (length(remaining_rtags) > BLOCK_SIZE){
+        # needed to handle replace = FALSE and numobs is odd
+        block_stem <- unique(remaining_rtags) |> utils::head(BLOCK_SIZE)
+        block_size <- length(block_stem)
+      } else {
+        block_stem <- unique(remaining_rtags)
+        block_size <- length(block_stem)
+      }
+
 
       # Get remainder of resampled tags
       # combine the block_stem with enough elements from resampled_tags to form a full block

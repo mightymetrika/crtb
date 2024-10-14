@@ -329,7 +329,7 @@ test_that("crtb works with odd number of observations and pooled = FALSE", {
 # # Simulation parameters
 # n <- 100        # Sample size
 # sim_iter <- 1000  # Number of simulation iterations
-# B <- 200        # Number of bootstrap resamples
+# B <- 1000        # Number of bootstrap resamples
 # B_crtb <- B / 2  # Number of crtb resamples (since crtb returns two datasets per iteration)
 #
 # # True coefficients
@@ -362,7 +362,8 @@ test_that("crtb works with odd number of observations and pooled = FALSE", {
 # for (sim in 1:sim_iter) {
 #   # Generate data
 #   X1 <- stats::rnorm(n)
-#   X2 <- 0.3 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)  # Low correlation with X1
+#   # X2 <- 0.3 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)  # Low correlation with X1
+#   X2 <- 0.6 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)  # Low correlation with X1
 #   epsilon <- stats::rnorm(n)
 #   Y <- beta0 + beta1 * X1 + beta2 * X2 + epsilon
 #
@@ -403,20 +404,20 @@ test_that("crtb works with odd number of observations and pooled = FALSE", {
 #   beta1_crtb <- numeric(B)
 #   b_crtb_counter <- 1
 #   for (b in 1:(B_crtb)) {
-#     resampled_data <- crtb(data)
-#     if (is.null(resampled_data)) {
+#     indices <- crtb(1:n)
+#     if (is.null(indices)) {
 #       # If resampled_data is NULL, skip this iteration
 #       next
 #     }
 #     # Original resample
-#     resampled_data$ordat[] <- sapply(resampled_data$ordat, as.numeric)
-#     model_crtb_ordat <- stats::lm(Y ~ X1 + X2, data = resampled_data$ordat)
+#     ordat <- data[indices$ordat, ]
+#     model_crtb_ordat <- stats::lm(Y ~ X1 + X2, data = ordat)
 #     beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_ordat)['X1']
 #     b_crtb_counter <- b_crtb_counter + 1
 #
 #     # Complementary resample
-#     resampled_data$crdat[] <- sapply(resampled_data$crdat, as.numeric)
-#     model_crtb_crdat <- stats::lm(Y ~ X1 + X2, data = resampled_data$crdat)
+#     crdat <- data[indices$crdat, ]
+#     model_crtb_crdat <- stats::lm(Y ~ X1 + X2, data = crdat)
 #     beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_crdat)['X1']
 #     b_crtb_counter <- b_crtb_counter + 1
 #   }
@@ -448,7 +449,7 @@ test_that("crtb works with odd number of observations and pooled = FALSE", {
 #
 #   # Optional: print progress
 #   if (sim %% 100 == 0) {
-#     cat("Completed simulation", sim, "out of", sim_iter, "\n")
+#     cat("Completed crtb simulation", sim, "out of", sim_iter, "\n")
 #   }
 # }
 #

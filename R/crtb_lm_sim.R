@@ -1,8 +1,21 @@
 crtb_lm_sim <- function(n = 100, # Sample size
                         sim_iter = 1000, # Number of simulation iterations
                         B = 1000, # Number of bootstrap resamples
-                        beta0 = 1, beta1 = 2, beta2 = 3, # True coefficients
-                        x1 = \(n)stats::rnorm(n,0,2)){
+                        # beta0 = 1, beta1 = 2, beta2 = 3, # True coefficients
+                        beta_gen = function(){
+                          return(
+                            list(1, #beta0
+                                 2, #beta1
+                                 3) #beta2
+                            )
+                        },
+                        gen_ivs = function(n){
+                          X1 <- stats::rnorm(n, 0, 1)
+                          X2 <- 0.6 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)
+                          epsilon <- stats::rnorm(n)
+                          return(list(X1, X2, epsilon))
+                        },
+                        .formula = "Y ~ X1 + X2"){
 
   B_crtb <- B / 2  # Number of crtb resamples (since crtb returns two datasets per iteration)
 
@@ -30,16 +43,13 @@ crtb_lm_sim <- function(n = 100, # Sample size
   # Simulation loop
   for (sim in 1:sim_iter) {
     # Generate data
-    X1 <- x1(n)
-    # X2 <- 0.3 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)  # Low correlation with X1
-    X2 <- 0.6 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)  # Low correlation with X1
-    epsilon <- stats::rnorm(n)
-    Y <- beta0 + beta1 * X1 + beta2 * X2 + epsilon
-
-    data <- data.frame(Y = Y, X1 = X1, X2 = X2)
+    betas <- beta_gen()
+    ivs <- gen_ivs(n)
+    Y <- betas[[1]] + betas[[2]]*ivs[[1]] + betas[[3]]*ivs[[2]] + ivs[[3]]
+    data <- data.frame(Y = Y, X1 = ivs[[1]], X2 = ivs[[2]])
 
     # Fit the linear regression model
-    model <- stats::lm(Y ~ X1 + X2, data = data)
+    model <- stats::lm(stats::as.formula(.formula), data = data)
     beta1_hat <- stats::coef(model)['X1']
     results$original_beta1[sim] <- beta1_hat
 
@@ -48,18 +58,18 @@ crtb_lm_sim <- function(n = 100, # Sample size
     for (b in 1:B) {
       indices <- sample(1:n, size = n, replace = TRUE)
       data_bootstrap <- data[indices, ]
-      model_bootstrap <- stats::lm(Y ~ X1 + X2, data = data_bootstrap)
+      model_bootstrap <- stats::lm(stats::as.formula(.formula), data = data_bootstrap)
       beta1_bootstrap[b] <- stats::coef(model_bootstrap)['X1']
     }
     # Compute bootstrap statistics
     beta1_SE_bootstrap <- stats::sd(beta1_bootstrap)
-    beta1_bias_bootstrap <- mean(beta1_bootstrap) - beta1
+    beta1_bias_bootstrap <- mean(beta1_bootstrap) - betas[[2]]
 
     # 95% confidence interval
     beta1_CI_low_bootstrap <- beta1_hat - stats::qnorm(0.975) * beta1_SE_bootstrap
     beta1_CI_high_bootstrap <- beta1_hat + stats::qnorm(0.975) * beta1_SE_bootstrap
 
-    beta1_coverage_bootstrap <- (beta1_CI_low_bootstrap <= beta1) & (beta1_CI_high_bootstrap >= beta1)
+    beta1_coverage_bootstrap <- (beta1_CI_low_bootstrap <= betas[[2]]) & (beta1_CI_high_bootstrap >= betas[[2]])
 
     # Store bootstrap results
     results$bootstrap$beta1_estimates[sim, ] <- beta1_bootstrap
@@ -80,13 +90,13 @@ crtb_lm_sim <- function(n = 100, # Sample size
       }
       # Original resample
       ordat <- data[indices$ordat, ]
-      model_crtb_ordat <- stats::lm(Y ~ X1 + X2, data = ordat)
+      model_crtb_ordat <- stats::lm(stats::as.formula(.formula), data = ordat)
       beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_ordat)['X1']
       b_crtb_counter <- b_crtb_counter + 1
 
       # Complementary resample
       crdat <- data[indices$crdat, ]
-      model_crtb_crdat <- stats::lm(Y ~ X1 + X2, data = crdat)
+      model_crtb_crdat <- stats::lm(stats::as.formula(.formula), data = crdat)
       beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_crdat)['X1']
       b_crtb_counter <- b_crtb_counter + 1
     }
@@ -96,13 +106,13 @@ crtb_lm_sim <- function(n = 100, # Sample size
     }
     # Compute crtb statistics
     beta1_SE_crtb <- stats::sd(beta1_crtb)
-    beta1_bias_crtb <- mean(beta1_crtb) - beta1
+    beta1_bias_crtb <- mean(beta1_crtb) - betas[[2]]
 
     # 95% confidence interval
     beta1_CI_low_crtb <- beta1_hat - stats::qnorm(0.975) * beta1_SE_crtb
     beta1_CI_high_crtb <- beta1_hat + stats::qnorm(0.975) * beta1_SE_crtb
 
-    beta1_coverage_crtb <- (beta1_CI_low_crtb <= beta1) & (beta1_CI_high_crtb >= beta1)
+    beta1_coverage_crtb <- (beta1_CI_low_crtb <= betas[[2]]) & (beta1_CI_high_crtb >= betas[[2]])
 
     # Store crtb results
     # Pad with NA if necessary

@@ -13,7 +13,7 @@ crtb_lm_sim <- function(n = 100, # Sample size
                           X1 <- stats::rnorm(n, 0, 1)
                           X2 <- 0.6 * X1 + sqrt(1 - 0.3^2) * stats::rnorm(n)
                           epsilon <- stats::rnorm(n)
-                          return(list(X1, X2, epsilon))
+                          return(list(X1 = X1, X2 = X2, epsilon = epsilon))
                         },
                         .formula = "Y ~ X1 + X2"){
 
@@ -45,12 +45,35 @@ crtb_lm_sim <- function(n = 100, # Sample size
     # Generate data
     betas <- beta_gen()
     ivs <- gen_ivs(n)
-    Y <- betas[[1]] + betas[[2]]*ivs[[1]] + betas[[3]]*ivs[[2]] + ivs[[3]]
-    data <- data.frame(Y = Y, X1 = ivs[[1]], X2 = ivs[[2]])
+    # Y <- betas[[1]] + betas[[2]]*ivs[[1]] + betas[[3]]*ivs[[2]] + ivs[[3]]
+    # data <- data.frame(Y = Y, X1 = ivs[[1]], X2 = ivs[[2]])
+    #
+    # # Fit the linear regression model
+    # model <- stats::lm(stats::as.formula(.formula), data = data)
+    # beta1_hat <- stats::coef(model)['X1']
+    # results$original_beta1[sim] <- beta1_hat
+    # Extract variable names from the formula
+    formula_vars <- all.vars(stats::as.formula(.formula))
+    response_var <- formula_vars[1]
+    predictor_vars <- formula_vars[-1]
+
+    # Create the data frame
+    data <- as.data.frame(ivs[predictor_vars])
+
+    # Generate the response variable
+    data[[response_var]] <- 0
+    for (i in seq_along(betas)) {
+      if (i == 1) {
+        data[[response_var]] <- data[[response_var]] + betas[[i]]  # Intercept
+      } else {
+        data[[response_var]] <- data[[response_var]] + betas[[i]] * data[[predictor_vars[i-1]]]
+      }
+    }
+    data[[response_var]] <- data[[response_var]] + ivs$epsilon  # Add error term
 
     # Fit the linear regression model
     model <- stats::lm(stats::as.formula(.formula), data = data)
-    beta1_hat <- stats::coef(model)['X1']
+    beta1_hat <- stats::coef(model)[predictor_vars[1]]
     results$original_beta1[sim] <- beta1_hat
 
     # Standard bootstrap

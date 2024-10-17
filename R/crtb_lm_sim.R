@@ -16,26 +16,73 @@ crtb_lm_sim <- function(n = 100, # Sample size
                           return(list(X1 = X1, X2 = X2, epsilon = epsilon))
                         },
                         .formula = "Y ~ X1 + X2"){
+  # Helper function: Jensen-Shannon Divergence Function
+  calculate_jsd <- function(P, Q) {
+    # Ensure P and Q are probability distributions
+    P <- P / sum(P)
+    Q <- Q / sum(Q)
+
+    # Calculate the average distribution
+    M <- (P + Q) / 2
+
+    # Calculate KL divergence for P and M
+    KL_PM <- sum(P * log(P / M), na.rm = TRUE)
+
+    # Calculate KL divergence for Q and M
+    KL_QM <- sum(Q * log(Q / M), na.rm = TRUE)
+
+    # Calculate Jensen-Shannon Divergence
+    JSD <- sqrt((KL_PM + KL_QM) / 2)
+
+    return(JSD)
+  }
+
+  # Helper function: Average Pairwise Jensen-Shannon Divergence Function
+  calculate_avg_pairwise_jsd <- function(resamples) {
+    n <- length(resamples)
+    total_jsd <- 0
+    count <- 0
+    jsd_calculation <- 0
+
+    for (i in 1:(n-1)) {
+      for (j in (i+1):n) {
+        P <- table(resamples[[i]]) / length(resamples[[i]])
+        Q <- table(resamples[[j]]) / length(resamples[[j]])
+        total_jsd <- total_jsd + calculate_jsd(P, Q)
+        count <- count + 1
+        jsd_calculation <- jsd_calculation + 1
+        print(jsd_calculation)
+
+      }
+    }
+
+    avg_jsd <- total_jsd / count
+    return(avg_jsd)
+  }
 
   B_crtb <- B / 2  # Number of crtb resamples (since crtb returns two datasets per iteration)
 
   # Storage for results
   results <- list(
     bootstrap = list(
+      resample = vector(mode = "list", length = B),
       beta1_estimates = matrix(0, nrow = sim_iter, ncol = B),
       beta1_SE = numeric(sim_iter),
       beta1_bias = numeric(sim_iter),
       beta1_CI_low = numeric(sim_iter),
       beta1_CI_high = numeric(sim_iter),
-      beta1_coverage = numeric(sim_iter)
+      beta1_coverage = numeric(sim_iter),
+      jsd = numeric(sim_iter)
     ),
     crtb = list(
+      resample = vector(mode = "list", length = B),
       beta1_estimates = matrix(0, nrow = sim_iter, ncol = B),
       beta1_SE = numeric(sim_iter),
       beta1_bias = numeric(sim_iter),
       beta1_CI_low = numeric(sim_iter),
       beta1_CI_high = numeric(sim_iter),
-      beta1_coverage = numeric(sim_iter)
+      beta1_coverage = numeric(sim_iter),
+      jsd = numeric(sim_iter)
     ),
     original_beta1 = numeric(sim_iter)
   )
@@ -45,14 +92,6 @@ crtb_lm_sim <- function(n = 100, # Sample size
     # Generate data
     betas <- beta_gen()
     ivs <- gen_ivs(n)
-    # Y <- betas[[1]] + betas[[2]]*ivs[[1]] + betas[[3]]*ivs[[2]] + ivs[[3]]
-    # data <- data.frame(Y = Y, X1 = ivs[[1]], X2 = ivs[[2]])
-    #
-    # # Fit the linear regression model
-    # model <- stats::lm(stats::as.formula(.formula), data = data)
-    # beta1_hat <- stats::coef(model)['X1']
-    # results$original_beta1[sim] <- beta1_hat
-    # Extract variable names from the formula
     formula_vars <- all.vars(stats::as.formula(.formula))
     response_var <- formula_vars[1]
     predictor_vars <- formula_vars[-1]
@@ -95,33 +134,42 @@ crtb_lm_sim <- function(n = 100, # Sample size
     beta1_coverage_bootstrap <- (beta1_CI_low_bootstrap <= betas[[2]]) & (beta1_CI_high_bootstrap >= betas[[2]])
 
     # Store bootstrap results
+    results$bootstrap$resample[[sim]] <- data_bootstrap
     results$bootstrap$beta1_estimates[sim, ] <- beta1_bootstrap
     results$bootstrap$beta1_SE[sim] <- beta1_SE_bootstrap
     results$bootstrap$beta1_bias[sim] <- beta1_bias_bootstrap
     results$bootstrap$beta1_CI_low[sim] <- beta1_CI_low_bootstrap
     results$bootstrap$beta1_CI_high[sim] <- beta1_CI_high_bootstrap
     results$bootstrap$beta1_coverage[sim] <- beta1_coverage_bootstrap
+    bootstrap_resamples <- results$bootstrap$resample[1:B]  # Assuming B is the number of bootstrap resamples
+    results$bootstrap$jsd[sim] <- calculate_avg_pairwise_jsd(bootstrap_resamples |> unlist())
 
     # CRTB
     beta1_crtb <- numeric(B)
     b_crtb_counter <- 1
+    crtb_converged <- 0
     for (b in 1:(B_crtb)) {
       indices <- crtb(1:n)
       if (is.null(indices)) {
         # If resampled_data is NULL, skip this iteration
         next
       }
+      # count as converged
+      crtb_converged <- crtb_converged + 1
+
       # Original resample
       ordat <- data[indices$ordat, ]
       model_crtb_ordat <- stats::lm(stats::as.formula(.formula), data = ordat)
       beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_ordat)['X1']
       b_crtb_counter <- b_crtb_counter + 1
+      results$crtb$resamples[[b_crtb_counter]] <- ordat
 
       # Complementary resample
       crdat <- data[indices$crdat, ]
       model_crtb_crdat <- stats::lm(stats::as.formula(.formula), data = crdat)
       beta1_crtb[b_crtb_counter] <- stats::coef(model_crtb_crdat)['X1']
       b_crtb_counter <- b_crtb_counter + 1
+      results$crtb$resamples[[b_crtb_counter]] <- crdat
     }
     # Adjust the length of beta1_crtb if necessary
     if (b_crtb_counter <= B) {
@@ -148,6 +196,8 @@ crtb_lm_sim <- function(n = 100, # Sample size
     results$crtb$beta1_CI_low[sim] <- beta1_CI_low_crtb
     results$crtb$beta1_CI_high[sim] <- beta1_CI_high_crtb
     results$crtb$beta1_coverage[sim] <- beta1_coverage_crtb
+    crtb_resamples <- results$crtb$resample[1:B]  # Assuming B is the number of CRTB resamples
+    results$crtb$jsd[sim] <- calculate_avg_pairwise_jsd(crtb_resamples |> unlist())
 
     # Optional: print progress
     if (sim %% 100 == 0) {
@@ -169,16 +219,32 @@ crtb_lm_sim <- function(n = 100, # Sample size
   crtb_CI_width_mean <- mean(results$crtb$beta1_CI_high - results$crtb$beta1_CI_low, na.rm = TRUE)
 
   # Output the results
-  cat("Bootstrap Results:\n")
-  cat("Average Bias:", bootstrap_bias_mean, "\n")
-  cat("Average SE:", bootstrap_SE_mean, "\n")
-  cat("Coverage Probability:", bootstrap_coverage_mean, "\n")
-  cat("Average CI Width:", bootstrap_CI_width_mean, "\n")
+  # cat("Bootstrap Results:\n")
+  # cat("Average Bias:", bootstrap_bias_mean, "\n")
+  # cat("Average SE:", bootstrap_SE_mean, "\n")
+  # cat("Coverage Probability:", bootstrap_coverage_mean, "\n")
+  # cat("Average CI Width:", bootstrap_CI_width_mean, "\n")
+  #
+  # cat("\nCRTB Results:\n")
+  # cat("Average Bias:", crtb_bias_mean, "\n")
+  # cat("Average SE:", crtb_SE_mean, "\n")
+  # cat("Coverage Probability:", crtb_coverage_mean, "\n")
+  # cat("Average CI Width:", crtb_CI_width_mean, "\n")
 
-  cat("\nCRTB Results:\n")
-  cat("Average Bias:", crtb_bias_mean, "\n")
-  cat("Average SE:", crtb_SE_mean, "\n")
-  cat("Coverage Probability:", crtb_coverage_mean, "\n")
-  cat("Average CI Width:", crtb_CI_width_mean, "\n")
+  output <- data.frame(results= c("bootstrap",
+                                  "crtb"),
+                       avg_bias = c(bootstrap_bias_mean,
+                                    crtb_bias_mean),
+                       avg_se = c(bootstrap_SE_mean,
+                                  crtb_SE_mean),
+                       coverage = c(bootstrap_coverage_mean,
+                                    crtb_coverage_mean),
+                       ci_width = c(bootstrap_CI_width_mean,
+                                    crtb_CI_width_mean),
+                       converged = c(NULL,
+                                     crtb_converged/B_crtb),
+                       avg_jsd = c(mean(results$bootstrap$jsd), mean(results$crtb$jsd)))
+
+  return(output)
 
 }

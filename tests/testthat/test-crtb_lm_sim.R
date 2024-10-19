@@ -1,4 +1,4 @@
-# test_that("multiplication works", {
-#   simres <- crtb_lm_sim(sim_iter = 100, B = 100)
-#   expect_equal(2 * 2, 4)
-# })
+test_that("crtb_lm_sim works", {
+  simres <- crtb_lm_sim(sim_iter = 5, B = 5, tie_thresh = 0) |> suppressWarnings()
+  expect_s3_class(simres, "data.frame")
+})

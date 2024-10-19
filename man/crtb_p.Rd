@@ -38,24 +38,12 @@ A list containing two elements:
 \item{ordat}{The original resampled data.}
 }
 \description{
-Performs complementary resampling of tags in blocks on the provided dataset,
+Performs complementary resampling of tags in blocks (crtb) on the provided dataset,
 pooling all groups together.
 }
 \details{
 The function operates by assigning unique tags to each observation in the data.
 It then resamples these tags (with or without replacement) and rearranges the
-data into blocks and their complements. This approach ensures that each observation
-is either included in a block or its complement, which may enhance the performance
-of resampling-based methods.
-
-If the proportion of unique resampled tags is below the \code{tie_thresh}, the
-function considers there to be too many ties (duplicate tags) and returns
-\code{NULL} with a warning. This is to prevent unreliable results due to
-insufficient variability in the resampled data.
-}
-\note{
-The method is particularly useful in situations where the standard bootstrap
-may not be appropriate due to dependencies within the data
-or the need for improved stability in variable selection procedures.
+data into blocks of unique tags and their complements.
 }
 \keyword{internal}

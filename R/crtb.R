@@ -1,10 +1,10 @@
-#' Complementary Resampling in Blocks
+#' Complementary Resampling of Tags in Blocks
 #'
-#' Performs complementary resampling in blocks on the provided dataset.
-#' This function implements the complementary pairs subsampling method, allowing
-#' for either pooled or non-pooled resampling of data groups. This method is
-#' inspired by the concept of complementary pairs subsampling, Shah & Samworth
-#' (2013), and attempts to approximate the method in the realm of resampling.
+#' Performs complementary resampling of tags in blocks (crtb) on the provided
+#' dataset. This function implements crtb allowing for either pooled or non-pooled
+#' resampling of data groups. This method is inspired by the concept of
+#' complementary pairs subsampling, Shah & Samworth (2013), and attempts to
+#' approximate the method in the realm of resampling.
 #'
 #' @param dat A data frame or vector containing the data to resample.
 #'   If a data frame, each column represents a group or variable.
@@ -88,7 +88,7 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
 
 #' Complementary Resampling of Tags in Blocks (Pooled Version)
 #'
-#' Performs complementary resampling of tags in blocks on the provided dataset,
+#' Performs complementary resampling of tags in blocks (crtb) on the provided dataset,
 #' pooling all groups together.
 #'
 #' @param dat A dataframe or vector containing the data to resample. If a
@@ -113,20 +113,7 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
 #' @details
 #' The function operates by assigning unique tags to each observation in the data.
 #' It then resamples these tags (with or without replacement) and rearranges the
-#' data into blocks and their complements. This approach ensures that each observation
-#' is either included in a block or its complement, which may enhance the performance
-#' of resampling-based methods.
-#'
-#' If the proportion of unique resampled tags is below the \code{tie_thresh}, the
-#' function considers there to be too many ties (duplicate tags) and returns
-#' \code{NULL} with a warning. This is to prevent unreliable results due to
-#' insufficient variability in the resampled data.
-#'
-#' @note
-#' The method is particularly useful in situations where the standard bootstrap
-#' may not be appropriate due to dependencies within the data
-#' or the need for improved stability in variable selection procedures.
-#'
+#' data into blocks of unique tags and their complements.
 #'
 #' @keywords internal
 crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
@@ -357,7 +344,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 
 #' Complementary Resampling of Tags in Blocks (Non-Pooled Version)
 #'
-#' Performs complementary resampling of tags in blocks on the provided data
+#' Performs complementary resampling of tags in blocks (crtb) on the provided data
 #' without pooling the groups. This function applies the resampling procedure
 #' separately to each group (column) in the data, which can be useful when groups
 #' are independent or should not be combined.
@@ -384,10 +371,6 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #' \code{\link{crtb_p}} to each group separately, without pooling the data. This
 #' is useful in contexts where the groups are independent or when pooling the data
 #' may not be appropriate.
-#'
-#' @note
-#' If any group results in too many ties (based on \code{tie_thresh}), the
-#' function will return \code{NULL} and a warning will be issued.
 #'
 #' @keywords internal
 crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL) {

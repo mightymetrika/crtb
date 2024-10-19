@@ -29,7 +29,7 @@ A list containing two elements:
 \item{ordat}{The original resampled data.}
 }
 \description{
-Performs complementary resampling of tags in blocks on the provided data
+Performs complementary resampling of tags in blocks (crtb) on the provided data
 without pooling the groups. This function applies the resampling procedure
 separately to each group (column) in the data, which can be useful when groups
 are independent or should not be combined.
@@ -39,9 +39,5 @@ The function applies the complementary resampling method implemented in
 \code{\link{crtb_p}} to each group separately, without pooling the data. This
 is useful in contexts where the groups are independent or when pooling the data
 may not be appropriate.
-}
-\note{
-If any group results in too many ties (based on \code{tie_thresh}), the
-function will return \code{NULL} and a warning will be issued.
 }
 \keyword{internal}

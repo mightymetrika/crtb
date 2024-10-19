@@ -2,7 +2,7 @@
 % Please edit documentation in R/crtb.R
 \name{crtb}
 \alias{crtb}
-\title{Complementary Resampling in Blocks}
+\title{Complementary Resampling of Tags in Blocks}
 \usage{
 crtb(
   dat,
@@ -44,11 +44,11 @@ A list containing two elements:
 \item{ordat}{The original resampled data.}
 }
 \description{
-Performs complementary resampling in blocks on the provided dataset.
-This function implements the complementary pairs subsampling method, allowing
-for either pooled or non-pooled resampling of data groups. This method is
-inspired by the concept of complementary pairs subsampling, Shah & Samworth
-(2013), and attempts to approximate the method in the realm of resampling.
+Performs complementary resampling of tags in blocks (crtb) on the provided
+dataset. This function implements crtb allowing for either pooled or non-pooled
+resampling of data groups. This method is inspired by the concept of
+complementary pairs subsampling, Shah & Samworth (2013), and attempts to
+approximate the method in the realm of resampling.
 }
 \details{
 The \code{crtb} function implements complementary resampling of tags in blocks

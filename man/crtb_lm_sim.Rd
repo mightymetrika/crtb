@@ -21,6 +21,7 @@ crtb_lm_sim(
  },
   .formula = "Y ~ X1 + X2",
   tie_thresh = 0.5,
+  alpha = 0.05,
   progress = FALSE
 )
 }
@@ -43,6 +44,8 @@ Default is "Y ~ X1 + X2".}
 \item{tie_thresh}{Numeric. Threshold for deciding if there are too many ties
 in the resampled data for CRTB. Default is 0.5.}
 
+\item{alpha}{Numeric. Alpha level for rejection rate and confidence intervals.}
+
 \item{progress}{Logical. If TRUE, prints progress updates. Default is FALSE.}
 }
 \value{
@@ -53,6 +56,7 @@ A data frame with the following columns:
 \item{coverage}{Coverage probability of the confidence interval for beta1}
 \item{ci_width}{Average width of the confidence interval for beta1}
 \item{converged}{Proportion of CRTB resamples that converged (NA for bootstrap)}
+\item{rejection}{Rejection rate}
 \item{avg_jsd}{Average Jensen-Shannon Divergence for the resamples}
 }
 \description{
@@ -77,7 +81,7 @@ and average pairwise JSD for the resamples.
 }
 \examples{
 # Run a small simulation with default parameters
-sim_results <- crtb_lm_sim(n = 50, sim_iter = 5, B = 5)
+sim_results <- crtb_lm_sim(n = 50, sim_iter = 2, B = 2)
 print(sim_results)
 
 # Run a simulation with custom data generation
@@ -90,8 +94,8 @@ custom_gen_ivs <- function(n) {
 }
 sim_results_custom <- crtb_lm_sim(
   n = 100,
-  sim_iter = 5,
-  B = 5,
+  sim_iter = 2,
+  B = 2,
   beta_gen = custom_beta_gen,
   gen_ivs = custom_gen_ivs,
   .formula = "Y ~ X1 + X2"

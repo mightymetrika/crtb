@@ -33,11 +33,11 @@ pak::pak("mightymetrika/crtb")
 
 When working with multiple groups and pooled resampling, CRTB follows these steps:
 
-1. Tag Assignment
+1. **Tag Assignment**
   - Each observation receives a unique integer tag
   - For multiple groups, tagging can be done row-wise or column-wise
  
-2. Initial Resampling
+2. **Initial Resampling**
   - Tags are resampled using one of three methods
     - With replacement (default)
     - Without replacement
@@ -45,7 +45,7 @@ When working with multiple groups and pooled resampling, CRTB follows these step
   - This creates the "original resample"
   - Process halts if the proportion of resamples falls below the tie threshold
 
-3. Block Creation
+3. **Block Creation**
   - Block length is set to half the length of initial tags
   - First block:
     - Formed from unique tags in original sample
@@ -56,13 +56,13 @@ When working with multiple groups and pooled resampling, CRTB follows these step
       2. Sample without replacement to fill block to target size
   - Continue until all tags from original sample are assigned to blocks
  
-4. Complementary Sampling
+4. **Complementary Sampling**
   - For each block:
     - Find complement (all tags not in block)
     - Sample from complement to match block stem size
   - Combined complementary samples form the "complementary resample"
  
-5. Output Generation
+5. **Output Generation**
   - Map tags back to original observations
   - Return two datasets:
     - Original resample

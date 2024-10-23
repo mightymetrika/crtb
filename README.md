@@ -25,12 +25,12 @@ pak::pak("mightymetrika/crtb")
 When working with multiple groups and pooled resampling, CRTB follows
 these steps:
 
-1.  Tag Assignment
+1.  **Tag Assignment**
 
 - Each observation receives a unique integer tag
 - For multiple groups, tagging can be done row-wise or column-wise
 
-2.  Initial Resampling
+2.  **Initial Resampling**
 
 - Tags are resampled using one of three methods
   - With replacement (default)
@@ -40,7 +40,7 @@ these steps:
 - Process halts if the proportion of resamples falls below the tie
   threshold
 
-3.  Block Creation
+3.  **Block Creation**
 
 - Block length is set to half the length of initial tags
 - First block:
@@ -52,14 +52,14 @@ these steps:
     2.  Sample without replacement to fill block to target size
 - Continue until all tags from original sample are assigned to blocks
 
-4.  Complementary Sampling
+4.  **Complementary Sampling**
 
 - For each block:
   - Find complement (all tags not in block)
   - Sample from complement to match block stem size
 - Combined complementary samples form the “complementary resample”
 
-5.  Output Generation
+5.  **Output Generation**
 
 - Map tags back to original observations
 - Return two datasets:
@@ -80,29 +80,29 @@ result <- crtb(data)
 
 # Access results
 result$ordat
-#>         group1      group2
-#> 1   -0.9516754  -0.1822092
-#> 2    -0.515937    1.126638
-#> 3  -0.04955159 -0.04955159
-#> 4    0.1611364  -0.9516754
-#> 5   -0.8100763   0.2877215
-#> 6     1.771701  -0.8202653
-#> 7   -0.8202653   0.2877215
-#> 8    0.1680735   0.1680735
-#> 9   -0.9148794 -0.03766213
-#> 10  -0.9148794 -0.03766213
+#>       group1     group2
+#> 1  0.4582403   1.217752
+#> 2  0.4861044 -0.8390638
+#> 3   1.615581 -0.2999852
+#> 4  0.3947707  0.4861044
+#> 5  0.1023458  0.6444523
+#> 6  0.4008284   1.685475
+#> 7  0.4008284  0.3947707
+#> 8  0.4008284 -0.6795774
+#> 9   1.615581   1.685475
+#> 10 0.9834048   1.177102
 result$crdat
-#>         group1      group2
-#> 1    -0.906561  -0.2299969
-#> 2     1.279905   -0.515937
-#> 3     2.205633  -0.1822092
-#> 4     1.126638   0.1611364
-#> 5   -0.2299969    1.279905
-#> 6    0.9291673   0.9291673
-#> 7  -0.03766213 -0.06317255
-#> 8   -0.2851652  -0.2851652
-#> 9    0.2877215   -0.906561
-#> 10 -0.06317255 -0.06317255
+#>        group1     group2
+#> 1  -0.6795774  -0.752682
+#> 2    1.177102   1.417757
+#> 3    0.420008  0.1023458
+#> 4    1.265133  0.9834048
+#> 5    1.685475 -0.2999852
+#> 6    1.040568  0.2299534
+#> 7    1.417757   1.265133
+#> 8   0.6444523  0.4582403
+#> 9   0.2299534  -0.752682
+#> 10  -0.752682  0.6444523
 ```
 
 Shah, R. D., & Samworth, R. J. (2013). Variable Selection with Error

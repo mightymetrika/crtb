@@ -34,39 +34,39 @@ pak::pak("mightymetrika/crtb")
 When working with multiple groups and pooled resampling, CRTB follows these steps:
 
 1. Tag Assignment
- - Each observation receives a unique integer tag
- - For multiple groups, tagging can be done row-wise or column-wise
+  - Each observation receives a unique integer tag
+  - For multiple groups, tagging can be done row-wise or column-wise
  
 2. Initial Resampling
- - Tags are resampled using one of three methods
-  - With replacement (default)
-  - Without replacement
-  - Custom resampling function
- - This creates the "original resample"
- - Process halts if the proportion of resamples falls below the tie threshold
+  - Tags are resampled using one of three methods
+    - With replacement (default)
+    - Without replacement
+    - Custom resampling function
+  - This creates the "original resample"
+  - Process halts if the proportion of resamples falls below the tie threshold
 
 3. Block Creation
- - Block length is set to half the length of initial tags
- - First block:
-  - Formed from unique tags in original sample
- - Subsequent blocks:
-  - Start with unique remaining tags (block stem)
-  - If block stem is undersized:
-   1. Take the set difference between all tags and block stem
-   2. Sample without replacement to fill block to target size
- - Continue until all tags from original sample are assigned to blocks
+  - Block length is set to half the length of initial tags
+  - First block:
+    - Formed from unique tags in original sample
+  - Subsequent blocks:
+    - Start with unique remaining tags (block stem)
+    - If block stem is undersized:
+      1. Take the set difference between all tags and block stem
+      2. Sample without replacement to fill block to target size
+  - Continue until all tags from original sample are assigned to blocks
  
 4. Complementary Sampling
- - For each block:
-  - Find complement (all tags not in block)
-  - Sample from complement to match block stem size
- - Combined complementary samples form the "complementary resample"
+  - For each block:
+    - Find complement (all tags not in block)
+    - Sample from complement to match block stem size
+  - Combined complementary samples form the "complementary resample"
  
 5. Output Generation
- - Map tags back to original observations
- - Return two datasets:
-  - Original resample
-  - Complementary resample
+  - Map tags back to original observations
+  - Return two datasets:
+    - Original resample
+    - Complementary resample
 
 ```{r example}
 library(crtb)

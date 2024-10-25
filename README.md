@@ -44,9 +44,12 @@ these steps:
 
 - Block length is set to half the length of initial tags
 - First block:
-  - Formed from unique tags in original sample
+  - Form initial block stem from unique tags in original sample
+  - If block stem is undersized:
+    1.  Take the set difference between all tags and block stem
+    2.  Sample without replacement to fill block to target size
 - Subsequent blocks:
-  - Start with unique remaining tags (block stem)
+  - Form new block stem from unique remaining tags
   - If block stem is undersized:
     1.  Take the set difference between all tags and block stem
     2.  Sample without replacement to fill block to target size
@@ -80,29 +83,29 @@ result <- crtb(data)
 
 # Access results
 result$ordat
-#>       group1     group2
-#> 1  0.4582403   1.217752
-#> 2  0.4861044 -0.8390638
-#> 3   1.615581 -0.2999852
-#> 4  0.3947707  0.4861044
-#> 5  0.1023458  0.6444523
-#> 6  0.4008284   1.685475
-#> 7  0.4008284  0.3947707
-#> 8  0.4008284 -0.6795774
-#> 9   1.615581   1.685475
-#> 10 0.9834048   1.177102
+#>         group1      group2
+#> 1    0.3066096   -1.005656
+#> 2   -0.6602836  -0.1824224
+#> 3   -0.1824224   0.1075436
+#> 4    0.4067197   -1.976019
+#> 5    -1.855841   0.1075436
+#> 6   -0.1824224 -0.01792544
+#> 7   0.09052154 -0.01792544
+#> 8    -1.976019   0.8712189
+#> 9  -0.01792544   0.3066096
+#> 10   -1.005656  -0.3849311
 result$crdat
 #>        group1     group2
-#> 1  -0.6795774  -0.752682
-#> 2    1.177102   1.417757
-#> 3    0.420008  0.1023458
-#> 4    1.265133  0.9834048
-#> 5    1.685475 -0.2999852
-#> 6    1.040568  0.2299534
-#> 7    1.417757   1.265133
-#> 8   0.6444523  0.4582403
-#> 9   0.2299534  -0.752682
-#> 10  -0.752682  0.6444523
+#> 1   0.7189153 -0.3600608
+#> 2  -0.1121349 -0.1121349
+#> 3  -0.3849311  0.5143101
+#> 4  -0.2297448 0.09661478
+#> 5   0.8712189 0.09052154
+#> 6   0.3288312  0.4067197
+#> 7  -0.3600608  0.7189153
+#> 8   0.5143101 -0.2297448
+#> 9  0.09661478 -0.1121349
+#> 10  0.4301553  0.7189153
 ```
 
 Shah, R. D., & Samworth, R. J. (2013). Variable Selection with Error

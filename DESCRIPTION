@@ -5,7 +5,15 @@ Authors@R: c(
     person("Mackson", "Ncube", , "macksonncube.stats@gmail.com", role = c("aut", "cre")),
     person("mightymetrika, LLC", role = c("cph", "fnd"))
   )
-Description: What the package does (one paragraph).
+Description: A variant of subsampling where subsamples are drawn as complementary
+    pairs have favorable properties in the context of stability selection such
+    as relaxing the strong exchangability assumption Shah and Samworth (2013)
+    <doi: 10.1111/j.1467-9868.2011.01034.x>. The 'crtb' package implements
+    complementary resampling of tags in block, an experimental method designed
+    as an analog to complementary pairs subsampling which can be used in the
+    context of resampling. The crtb() function can be used to implement the
+    method while the crtb_lm_sim() function streamlines simulation studies
+    comparing standard resampling to the method implemented in crtb().
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

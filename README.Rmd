@@ -48,9 +48,12 @@ When working with multiple groups and pooled resampling, CRTB follows these step
 3. **Block Creation**
   - Block length is set to half the length of initial tags
   - First block:
-    - Formed from unique tags in original sample
+    - Form initial block stem from unique tags in original sample
+    - If block stem is undersized:
+      1. Take the set difference between all tags and block stem
+      2. Sample without replacement to fill block to target size
   - Subsequent blocks:
-    - Start with unique remaining tags (block stem)
+    - Form new block stem from unique remaining tags
     - If block stem is undersized:
       1. Take the set difference between all tags and block stem
       2. Sample without replacement to fill block to target size

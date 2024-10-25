@@ -204,6 +204,15 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
       block <- unique(remaining_rtags) |> utils::head(block_size)
       block_stem = block
 
+      # Ensure that the block has the correct block size
+      if (length(block_stem) < block_size){
+        block <- c(block_stem,
+                   setdiff(sample(resampled_tags, length(resampled_tags), replace = FALSE),
+                           block_stem) |> utils::head(BLOCK_SIZE - length(block_stem)))
+        block_size <- length(block_stem)
+
+      }
+
       # Save block
       block_list[[paste0("block",i)]] <- list(block = block,
                                               block_size = block_size)
@@ -221,7 +230,6 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
         block_stem <- unique(remaining_rtags)
         block_size <- length(block_stem)
       }
-
 
       # Get remainder of resampled tags
       # combine the block_stem with enough elements from resampled_tags to form a full block

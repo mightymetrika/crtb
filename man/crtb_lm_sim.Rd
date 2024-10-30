@@ -57,7 +57,6 @@ A data frame with the following columns:
 \item{ci_width}{Average width of the confidence interval for beta1}
 \item{converged}{Proportion of CRTB resamples that converged (NA for bootstrap)}
 \item{rejection}{Rejection rate}
-\item{avg_jsd}{Average Jensen-Shannon Divergence for the resamples}
 }
 \description{
 This function performs a simulation study comparing traditional bootstrap
@@ -75,9 +74,6 @@ traditional bootstrap resampling with Complementary Resampling of Tags in Blocks
 \item Performs both bootstrap and CRTB resampling
 \item Computes various performance metrics for both methods
 }
-
-The function uses helper functions to calculate Jensen-Shannon Divergence (JSD)
-and average pairwise JSD for the resamples.
 }
 \examples{
 # Run a small simulation with default parameters

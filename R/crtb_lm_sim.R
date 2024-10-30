@@ -27,7 +27,6 @@
 #'   \item{ci_width}{Average width of the confidence interval for beta1}
 #'   \item{converged}{Proportion of CRTB resamples that converged (NA for bootstrap)}
 #'   \item{rejection}{Rejection rate}
-#'   \item{avg_jsd}{Average Jensen-Shannon Divergence for the resamples}
 #'
 #' @details
 #' This function performs a simulation study to compare the performance of
@@ -37,9 +36,6 @@
 #' 2. Fits a linear regression model
 #' 3. Performs both bootstrap and CRTB resampling
 #' 4. Computes various performance metrics for both methods
-#'
-#' The function uses helper functions to calculate Jensen-Shannon Divergence (JSD)
-#' and average pairwise JSD for the resamples.
 #'
 #' @examples
 #' # Run a small simulation with default parameters
@@ -98,46 +94,6 @@ crtb_lm_sim <- function(n = 100, # Sample size
   formula_vars <- all.vars(stats::as.formula(.formula))
   response_var <- formula_vars[1]
 
-  # Helper function: Jensen-Shannon Divergence Function
-  calculate_jsd <- function(P, Q) {
-    # Ensure P and Q are probability distributions
-    P <- P / sum(P)
-    Q <- Q / sum(Q)
-
-    # Calculate the average distribution
-    M <- (P + Q) / 2
-
-    # Calculate KL divergence for P and M
-    KL_PM <- sum(P * log(P / M), na.rm = TRUE)
-
-    # Calculate KL divergence for Q and M
-    KL_QM <- sum(Q * log(Q / M), na.rm = TRUE)
-
-    # Calculate Jensen-Shannon Divergence
-    JSD <- sqrt((KL_PM + KL_QM) / 2)
-
-    return(JSD)
-  }
-
-  # Helper function: Average Pairwise Jensen-Shannon Divergence Function
-  calculate_avg_pairwise_jsd <- function(resamples, response_var) {
-    n <- length(resamples)
-    total_jsd <- 0
-    count <- 0
-
-    for (i in 1:(n-1)) {
-      for (j in (i+1):n) {
-        P <- as.vector(table(resamples[[i]][[response_var]]) / length(resamples[[i]][[response_var]]))
-        Q <- as.vector(table(resamples[[j]][[response_var]]) / length(resamples[[j]][[response_var]]))
-        total_jsd <- total_jsd + calculate_jsd(P, Q)
-        count <- count + 1
-      }
-    }
-
-    avg_jsd <- total_jsd / count
-    return(avg_jsd)
-  }
-
   B_crtb <- B / 2  # Number of crtb resamples (since crtb returns two datasets per iteration)
 
   # Storage for results
@@ -150,8 +106,7 @@ crtb_lm_sim <- function(n = 100, # Sample size
       beta1_CI_low = numeric(sim_iter),
       beta1_CI_high = numeric(sim_iter),
       beta1_coverage = numeric(sim_iter),
-      beta1_reject = numeric(sim_iter),
-      jsd = numeric(sim_iter)
+      beta1_reject = numeric(sim_iter)
     ),
     crtb = list(
       resample = vector(mode = "list", length = sim_iter),
@@ -161,8 +116,7 @@ crtb_lm_sim <- function(n = 100, # Sample size
       beta1_CI_low = numeric(sim_iter),
       beta1_CI_high = numeric(sim_iter),
       beta1_coverage = numeric(sim_iter),
-      beta1_reject = numeric(sim_iter),
-      jsd = numeric(sim_iter)
+      beta1_reject = numeric(sim_iter)
     ),
     original_beta1 = numeric(sim_iter)
   )
@@ -230,10 +184,6 @@ crtb_lm_sim <- function(n = 100, # Sample size
     results$bootstrap$beta1_coverage[sim] <- beta1_coverage_bootstrap
     results$bootstrap$beta1_reject[sim] <- mean(beta1_rejection)
 
-    # Compute JSD for bootstrap resamples
-    bootstrap_resamples <- results$bootstrap$resample[[sim]]
-    results$bootstrap$jsd[sim] <- calculate_avg_pairwise_jsd(bootstrap_resamples, response_var)
-
     # CRTB
     beta1_crtb <- numeric(B)
     beta1_crtb_rejection <- numeric(B)
@@ -299,10 +249,6 @@ crtb_lm_sim <- function(n = 100, # Sample size
     results$crtb$beta1_coverage[sim] <- beta1_coverage_crtb
     results$crtb$beta1_reject[sim] <- mean(beta1_crtb_rejection)
 
-    # Compute JSD for CRTB resamples
-    crtb_resamples <- results$crtb$resample[[sim]]
-    results$crtb$jsd[sim] <- calculate_avg_pairwise_jsd(crtb_resamples, response_var)
-
     # Optional: print progress
     if(progress){
       if (sim %% 100 == 0) {
@@ -342,8 +288,8 @@ crtb_lm_sim <- function(n = 100, # Sample size
                        converged = c(NA,
                                      crtb_converged/B_crtb),
                        rejection = c(bootstrap_rejection_mean,
-                                     crtb_rejection_mean),
-                       avg_jsd = c(mean(results$bootstrap$jsd), mean(results$crtb$jsd)))
+                                     crtb_rejection_mean)
+                       )
 
   return(output)
 

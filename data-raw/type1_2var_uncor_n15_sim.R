@@ -1,6 +1,6 @@
 ## code to prepare `type1_2var_uncor_n15_sim` dataset goes here
 system.time(
-type1_2var_uncor_n15_sim <- crtb_lm_sim(n = 15, sim_iter = 1000, B = 1000,
+type1_2var_uncor_n15_sim <- crtb_lm_sim(n = 15, sim_iter = 10000, B = 2000,
                                         beta_gen = function(){
                                           return(
                                             list(1, #beta0

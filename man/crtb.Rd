@@ -10,7 +10,8 @@ crtb(
   rowwise = TRUE,
   tie_thresh = 0.5,
   replace = TRUE,
-  sample_fun = NULL
+  sample_fun = NULL,
+  grp_var = NULL
 )
 }
 \arguments{
@@ -37,6 +38,12 @@ replacement.}
 should accept a vector of tags (the data to be resampled) and return a
 resampled vector of the same length. If \code{NULL} (default), the standard
 \code{sample} function is used with the \code{replace} argument.}
+
+\item{grp_var}{Character; name of the column that contains group labels when data is in long format
+(i.e., one observation per row with a separate column for group membership). If \code{NULL}
+(default), assumes data is in wide format with groups as separate columns. When \code{pooled = TRUE},
+groups are combined for resampling; when \code{pooled = FALSE}, resampling is performed separately
+within each group.}
 }
 \value{
 A list containing two elements:
@@ -63,6 +70,17 @@ separately to each group.
 Internally, the function calls either a pooled version or a non-pooled version
 of the resampling algorithm. This approach provides flexibility depending on
 whether the groups in the data should be treated together or separately.
+
+The function supports two data formats for grouped data:
+\itemize{
+\item Wide format (default): Each group is represented as a separate column in the data frame
+\item Long format: Data contains a single column of values and a separate column specifying
+group membership (specified via \code{grp_var})
+}
+
+When using long format with \code{pooled = TRUE}, all observations are pooled together regardless
+of group membership. When \code{pooled = FALSE}, resampling is performed separately within each
+group defined by \code{grp_var}.
 }
 \examples{
 # Example with a data frame and pooled = TRUE

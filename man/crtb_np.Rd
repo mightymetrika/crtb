@@ -4,7 +4,13 @@
 \alias{crtb_np}
 \title{Complementary Resampling of Tags in Blocks (Non-Pooled Version)}
 \usage{
-crtb_np(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL)
+crtb_np(
+  dat,
+  tie_thresh = 0.5,
+  replace = TRUE,
+  sample_fun = NULL,
+  grp_var = NULL
+)
 }
 \arguments{
 \item{dat}{A data frame containing the data to resample. Each column represents
@@ -22,6 +28,11 @@ replacement.}
 should accept a vector of tags (the data to be resampled) and return a
 resampled vector of the same length. If \code{NULL} (default), the standard
 \code{sample} function is used with the \code{replace} argument.}
+
+\item{grp_var}{Character; name of the column that contains group labels when data is in long format
+(i.e., one observation per row with a separate column for group membership). If \code{NULL}
+(default), assumes data is in wide format with groups as separate columns. The function will
+perform separate resampling for each unique group in this column.}
 }
 \value{
 A list containing two elements:

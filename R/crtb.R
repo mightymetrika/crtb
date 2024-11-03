@@ -108,9 +108,6 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
     # Create row indices
     row_indices <- 1:nrow(dat)
 
-    # Split indices by group
-    grouped_indices <- split(row_indices, dat[[grp_var]])
-
     if (pooled) {
       # For pooled version, use all indices together
       resampled <- crtb_p(row_indices, rowwise = rowwise,
@@ -129,6 +126,9 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
       ordat[[grp_var]] <- dat[,grp_var]
 
     } else {
+      # Split indices by group
+      grouped_indices <- split(row_indices, dat[[grp_var]])
+
       # For non-pooled, resample indices within each group
       resampled <- crtb_np(grouped_indices,
                            tie_thresh = tie_thresh,

@@ -74,8 +74,8 @@ whether the groups in the data should be treated together or separately.
 The function supports two data formats for grouped data:
 \itemize{
 \item Wide format (default): Each group is represented as a separate column in the data frame
-\item Long format: Data contains a single column of values and a separate column specifying
-group membership (specified via \code{grp_var})
+\item Long format: Data contains a column specifying group membership
+(specified via \code{grp_var})
 }
 
 When using long format with \code{pooled = TRUE}, all observations are pooled together regardless
@@ -103,6 +103,13 @@ sample_fun <- function(x) {
 }
 
 out_custom <- crtb(data, rowwise = TRUE, sample_fun = sample_fun)
+
+# Example with pooled resampling using grp_var to handle unequal group size
+dat <- data.frame(obs1 = rpois(7,5),
+                  obs2 = rpois(7,9),
+                  tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+uneq_grps <- crtb(dat, grp_var = "tx")
 
 }
 \references{

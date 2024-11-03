@@ -51,8 +51,8 @@
 #' The function supports two data formats for grouped data:
 #' \itemize{
 #'   \item Wide format (default): Each group is represented as a separate column in the data frame
-#'   \item Long format: Data contains a single column of values and a separate column specifying
-#'     group membership (specified via \code{grp_var})
+#'   \item Long format: Data contains a column specifying group membership
+#'   (specified via \code{grp_var})
 #' }
 #'
 #' When using long format with \code{pooled = TRUE}, all observations are pooled together regardless
@@ -88,47 +88,72 @@
 #'
 #' out_custom <- crtb(data, rowwise = TRUE, sample_fun = sample_fun)
 #'
+#' # Example with pooled resampling using grp_var to handle unequal group size
+#' dat <- data.frame(obs1 = rpois(7,5),
+#'                   obs2 = rpois(7,9),
+#'                   tx = c("T", "T", "T", "T", "C", "C", "C"))
+#'
+#' uneq_grps <- crtb(dat, grp_var = "tx")
+#'
 #' @export
 crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
-                 replace = TRUE, sample_fun = NULL, grp_var = NULL){
+                 replace = TRUE, sample_fun = NULL, grp_var = NULL) {
 
-  # Handle long format conversion if group variable is specified
+  # Handle long format
   if (!is.null(grp_var)) {
     if (!grp_var %in% names(dat)) {
       stop("Specified group variable not found in data")
     }
 
-    # For long format, we need:
-    # 1. A value column (all non-group columns combined if multiple)
-    # 2. The group column
-    value_cols <- setdiff(names(dat), grp_var)
-    if (length(value_cols) > 1) {
-      warning("Multiple value columns found. Using first column.")
+    # Create row indices
+    row_indices <- 1:nrow(dat)
+
+    # Split indices by group
+    grouped_indices <- split(row_indices, dat[[grp_var]])
+
+    if (pooled) {
+      # For pooled version, use all indices together
+      resampled <- crtb_p(row_indices, rowwise = rowwise,
+                          tie_thresh = tie_thresh,
+                          replace = replace,
+                          sample_fun = sample_fun)
+
+      if (is.null(resampled)) return(NULL)
+
+      # Use indices to reconstruct data
+      crdat <- dat[resampled$crdat, ]
+      ordat <- dat[resampled$ordat, ]
+
+      # Use original group structure
+      crdat[[grp_var]] <- dat[,grp_var]
+      ordat[[grp_var]] <- dat[,grp_var]
+
+    } else {
+      # For non-pooled, resample indices within each group
+      resampled <- crtb_np(grouped_indices,
+                           tie_thresh = tie_thresh,
+                           replace = replace,
+                           sample_fun = sample_fun)
+
+      if (is.null(resampled)) return(NULL)
+
+      # Reconstruct data using resampled indices
+      crdat <- dat[unlist(resampled$crdat), ]
+      ordat <- dat[unlist(resampled$ordat), ]
     }
-    value_col <- value_cols[1]
 
-    # Store original format for later conversion back
-    orig_format <- list(
-      value_col = value_col,
-      grp_var = grp_var,
-      groups = unique(dat[[grp_var]])
-    )
-  } else {
-    orig_format <- NULL
+    return(list(crdat = crdat, ordat = ordat))
   }
 
-  if(!pooled){
-    res <- crtb_np(dat = dat, tie_thresh = tie_thresh, replace = replace,
-                   sample_fun = sample_fun, grp_var = grp_var)
+  # Original code for wide format/vector cases
+  if (!pooled) {
+    res <- crtb_np(dat = dat, tie_thresh = tie_thresh,
+                   replace = replace,
+                   sample_fun = sample_fun)
   } else {
-    res <- crtb_p(dat = dat, rowwise = rowwise, tie_thresh = tie_thresh,
+    res <- crtb_p(dat = dat, rowwise = rowwise,
+                  tie_thresh = tie_thresh,
                   replace = replace, sample_fun = sample_fun)
-  }
-
-  # Convert results back to long format if needed
-  if (!is.null(grp_var) && !is.null(res)) {
-    res$crdat <- reshape_to_long(res$crdat, orig_format)
-    res$ordat <- reshape_to_long(res$ordat, orig_format)
   }
 
   return(res)
@@ -417,10 +442,6 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #'   should accept a vector of tags (the data to be resampled) and return a
 #'   resampled vector of the same length. If \code{NULL} (default), the standard
 #'   \code{sample} function is used with the \code{replace} argument.
-#' @param grp_var Character; name of the column that contains group labels when data is in long format
-#'   (i.e., one observation per row with a separate column for group membership). If \code{NULL}
-#'   (default), assumes data is in wide format with groups as separate columns. The function will
-#'   perform separate resampling for each unique group in this column.
 #'
 #' @return A list containing two elements:
 #'   \item{crdat}{The complementary resampled data.}
@@ -433,99 +454,49 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #' may not be appropriate.
 #'
 #' @keywords internal
-crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL,
-                    grp_var = NULL) {
-
-  # # Check that dat is a data.frame
-  # if (!is.data.frame(dat)) {
-  #   stop("dat must be a data.frame")
-  # }
-  #
-  # # Apply crtb to each column (group) separately
-  # results <- lapply(dat, function(col) {
-  #   crtb(col, rowwise = TRUE, tie_thresh = tie_thresh, replace = replace,
-  #        sample_fun = sample_fun)
-  # })
-
-  if (!is.null(grp_var)) {
-    # Split data by groups and apply crtb to each group
-    grouped_data <- split(dat[[setdiff(names(dat), grp_var)[1]]],
-                          dat[[grp_var]])
-
-    results <- lapply(grouped_data, function(group_values) {
-      crtb(group_values, rowwise = TRUE, tie_thresh = tie_thresh,
-           replace = replace, sample_fun = sample_fun)
+crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE,
+                    sample_fun = NULL) {
+  # Check if we're working with grouped indices
+  if (is.list(dat) && !is.data.frame(dat)) {
+    # Working with grouped indices
+    results <- lapply(dat, function(group_indices) {
+      crtb(group_indices, rowwise = TRUE,
+           tie_thresh = tie_thresh,
+           replace = replace,
+           sample_fun = sample_fun)
     })
-  } else {
-    # Original wide format handling
-    results <- lapply(dat, function(col) {
-      crtb(col, rowwise = TRUE, tie_thresh = tie_thresh,
-           replace = replace, sample_fun = sample_fun)
-    })
+
+    # Check for NULL results
+    if (any(sapply(results, is.null))) {
+      return(NULL)
+    }
+
+    # Combine results maintaining group structure
+    return(list(
+      crdat = lapply(results, function(res) res$crdat),
+      ordat = lapply(results, function(res) res$ordat)
+    ))
   }
 
-  # Check if any results are NULL
+  # Original code for wide format
+  results <- lapply(dat, function(col) {
+    crtb(col, rowwise = TRUE, tie_thresh = tie_thresh,
+         replace = replace, sample_fun = sample_fun)
+  })
+
   if (any(sapply(results, is.null))) {
     return(NULL)
   }
 
-  # # Extract the resampled data from each result
-  # rdat_list <- lapply(results, function(res) {
-  #   # 'res' could be a vector or data.frame with one column
-  #   if (is.data.frame(res$crdat)) {
-  #     res$crdat[[1]]  # Extract the column as a vector
-  #   } else {
-  #     res$crdat
-  #   }
-  # })
-  #
-  # odat_list <- lapply(results, function(res) {
-  #   # 'res' could be a vector or data.frame with one column
-  #   if (is.data.frame(res$ordat)) {
-  #     res$ordat[[1]]  # Extract the column as a vector
-  #   } else {
-  #     res$ordat
-  #   }
-  # })
-  #
-  # # Combine the resampled data into a data frame
-  # rdat_df <- data.frame(rdat_list)
-  # names(rdat_df) <- names(dat)
-  #
-  # # Combine the resampled data into a data frame
-  # odat_df <- data.frame(odat_list)
-  # names(odat_df) <- names(dat)
+  rdat_df <- data.frame(lapply(results, function(res) {
+    if (is.data.frame(res$crdat)) res$crdat[[1]] else res$crdat
+  }))
+  names(rdat_df) <- names(dat)
 
-  # Extract and combine results
-  if (!is.null(grp_var)) {
-    # For long format, combine maintaining group structure
-    rdat_list <- lapply(results, function(res) res$crdat)
-    odat_list <- lapply(results, function(res) res$ordat)
+  odat_df <- data.frame(lapply(results, function(res) {
+    if (is.data.frame(res$ordat)) res$ordat[[1]] else res$ordat
+  }))
+  names(odat_df) <- names(dat)
 
-    rdat_df <- data.frame(
-      value = unlist(rdat_list),
-      group = rep(names(rdat_list), sapply(rdat_list, length))
-    )
-    names(rdat_df) <- c(setdiff(names(dat), grp_var)[1], grp_var)
-
-    odat_df <- data.frame(
-      value = unlist(odat_list),
-      group = rep(names(odat_list), sapply(odat_list, length))
-    )
-    names(odat_df) <- c(setdiff(names(dat), grp_var)[1], grp_var)
-  } else {
-    # Original wide format combining
-    rdat_df <- data.frame(lapply(results, function(res) {
-      if (is.data.frame(res$crdat)) res$crdat[[1]] else res$crdat
-    }))
-    names(rdat_df) <- names(dat)
-
-    odat_df <- data.frame(lapply(results, function(res) {
-      if (is.data.frame(res$ordat)) res$ordat[[1]] else res$ordat
-    }))
-    names(odat_df) <- names(dat)
-  }
-
-  return(list(crdat = rdat_df,
-              ordat = odat_df))
+  return(list(crdat = rdat_df, ordat = odat_df))
 }

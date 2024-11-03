@@ -321,5 +321,161 @@ test_that("crtb works with odd number of observations and pooled = FALSE", {
 
 })
 
+test_that("crtb works with grp_var for pooled resampling with one value column", {
+
+  # run resampling with replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, grp_var = "tx") |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+  rm(out,dat)
 
 
+  # run resampling without replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, rowwise = TRUE, replace = FALSE, grp_var = "tx") |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+
+})
+
+
+test_that("crtb works with grp_var for pooled resampling with two value columns", {
+
+  # run resampling with replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    obs2 = rpois(7,9),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, grp_var = "tx") |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+  rm(out,dat)
+
+
+  # run resampling without replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    obs2 = rpois(7,9),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, rowwise = TRUE, replace = FALSE, grp_var = "tx") |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+
+})
+
+test_that("crtb works with grp_var for non-pooled resampling with one value column", {
+
+  # run resampling with replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, grp_var = "tx", pooled = FALSE) |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+  rm(out,dat)
+
+
+  # run resampling without replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, rowwise = TRUE, replace = FALSE, grp_var = "tx",
+              pooled = FALSE) |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+
+})
+
+test_that("crtb works with grp_var for non-pooled resampling with two value columns", {
+
+  # run resampling with replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    obs2 = rpois(7,9),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, grp_var = "tx", pooled = FALSE) |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+  rm(out,dat)
+
+
+  # run resampling without replacement
+  dat <- data.frame(obs1 = rpois(7,5),
+                    obs2 = rpois(7,9),
+                    tx = c("T", "T", "T", "T", "C", "C", "C"))
+
+  out <- crtb(dat, rowwise = TRUE, replace = FALSE, grp_var = "tx",
+              pooled = FALSE) |> suppressWarnings()
+
+  if (is.null(out)){
+    dat <- NULL
+  } else {
+    out <- out$crdat
+  }
+
+  expect_equal(nrow(dat), nrow(out))
+  expect_equal(names(dat), names(out))
+  expect_equal(table(dat$tx), table(out$tx))
+
+})

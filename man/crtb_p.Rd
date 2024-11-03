@@ -13,8 +13,7 @@ crtb_p(
 )
 }
 \arguments{
-\item{dat}{A dataframe or vector containing the data to resample. If a
-dataframe, each column represents a group or variable.}
+\item{dat}{A dataframe or vector containing the data to resample.}
 
 \item{rowwise}{Logical; if \code{TRUE} (default), tagging is done row-wise
 across groups. If \code{FALSE}, tagging is done column-wise within each group.}

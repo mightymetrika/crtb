@@ -7,7 +7,6 @@
 #' approximate the method in the realm of resampling.
 #'
 #' @param dat A data frame or vector containing the data to resample.
-#'   If a data frame, each column represents a group or variable.
 #' @param pooled Logical; if \code{TRUE} (default), data from all groups are
 #'   pooled together for resampling. If \code{FALSE}, resampling is performed
 #'   separately for each group.
@@ -24,10 +23,11 @@
 #'   should accept a vector of tags (the data to be resampled) and return a
 #'   resampled vector of the same length. If \code{NULL} (default), the standard
 #'   \code{sample} function is used with the \code{replace} argument.
-#' @param grp_var Character; name of the column that contains group labels when data is in long format
-#'   (i.e., one observation per row with a separate column for group membership). If \code{NULL}
-#'   (default), assumes data is in wide format with groups as separate columns. When \code{pooled = TRUE},
-#'   groups are combined for resampling; when \code{pooled = FALSE}, resampling is performed separately
+#' @param grp_var Character; name of the column that contains group labels when
+#'   data is in long format (i.e., one observation per row with a column for
+#'   group membership). If \code{NULL} (default), assumes data is in wide format
+#'   with groups as separate columns. When \code{pooled = TRUE}, groups are combined
+#'   for resampling; when \code{pooled = FALSE}, resampling is performed separately
 #'   within each group.
 #'
 #' @return A list containing two elements:
@@ -44,21 +44,13 @@
 #' When \code{pooled = FALSE}, the function applies the resampling procedure
 #' separately to each group.
 #'
-#' Internally, the function calls either a pooled version or a non-pooled version
-#' of the resampling algorithm. This approach provides flexibility depending on
-#' whether the groups in the data should be treated together or separately.
-#'
 #' The function supports two data formats for grouped data:
 #' \itemize{
-#'   \item Wide format (default): Each group is represented as a separate column in the data frame
+#'   \item Wide format (default): Each group is represented as a separate column
+#'   in the data frame
 #'   \item Long format: Data contains a column specifying group membership
 #'   (specified via \code{grp_var})
 #' }
-#'
-#' When using long format with \code{pooled = TRUE}, all observations are pooled together regardless
-#' of group membership. When \code{pooled = FALSE}, resampling is performed separately within each
-#' group defined by \code{grp_var}.
-#'
 #'
 #' @references
 #' Shah, R. D., & Samworth, R. J. (2013). Variable Selection with Error Control:
@@ -164,8 +156,7 @@ crtb <- function(dat, pooled = TRUE, rowwise = TRUE, tie_thresh = 0.5,
 #' Performs complementary resampling of tags in blocks (crtb) on the provided dataset,
 #' pooling all groups together.
 #'
-#' @param dat A dataframe or vector containing the data to resample. If a
-#'   dataframe, each column represents a group or variable.
+#' @param dat A dataframe or vector containing the data to resample.
 #' @param rowwise Logical; if \code{TRUE} (default), tagging is done row-wise
 #'   across groups. If \code{FALSE}, tagging is done column-wise within each group.
 #' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
@@ -427,11 +418,9 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #'
 #' Performs complementary resampling of tags in blocks (crtb) on the provided data
 #' without pooling the groups. This function applies the resampling procedure
-#' separately to each group (column) in the data, which can be useful when groups
-#' are independent or should not be combined.
+#' separately to each group in the data.
 #'
-#' @param dat A data frame containing the data to resample. Each column represents
-#'   a group or variable.
+#' @param dat A data frame containing the data to resample.
 #' @param tie_thresh Numeric; a threshold between 0 and 1 to decide if there are
 #'   too many ties in the resampled data. If the proportion of unique resampled
 #'   tags is less than \code{tie_thresh}, the function will return \code{NULL}
@@ -449,9 +438,7 @@ crtb_p <- function(dat, rowwise = TRUE, tie_thresh = 0.5,
 #'
 #' @details
 #' The function applies the complementary resampling method implemented in
-#' \code{\link{crtb_p}} to each group separately, without pooling the data. This
-#' is useful in contexts where the groups are independent or when pooling the data
-#' may not be appropriate.
+#' \code{\link{crtb_p}} to each group separately, without pooling the data.
 #'
 #' @keywords internal
 crtb_np <- function(dat, tie_thresh = 0.5, replace = TRUE,

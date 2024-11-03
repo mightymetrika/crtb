@@ -7,8 +7,7 @@
 crtb_np(dat, tie_thresh = 0.5, replace = TRUE, sample_fun = NULL)
 }
 \arguments{
-\item{dat}{A data frame containing the data to resample. Each column represents
-a group or variable.}
+\item{dat}{A data frame containing the data to resample.}
 
 \item{tie_thresh}{Numeric; a threshold between 0 and 1 to decide if there are
 too many ties in the resampled data. If the proportion of unique resampled
@@ -31,13 +30,10 @@ A list containing two elements:
 \description{
 Performs complementary resampling of tags in blocks (crtb) on the provided data
 without pooling the groups. This function applies the resampling procedure
-separately to each group (column) in the data, which can be useful when groups
-are independent or should not be combined.
+separately to each group in the data.
 }
 \details{
 The function applies the complementary resampling method implemented in
-\code{\link{crtb_p}} to each group separately, without pooling the data. This
-is useful in contexts where the groups are independent or when pooling the data
-may not be appropriate.
+\code{\link{crtb_p}} to each group separately, without pooling the data.
 }
 \keyword{internal}

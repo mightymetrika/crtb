@@ -15,8 +15,7 @@ crtb(
 )
 }
 \arguments{
-\item{dat}{A data frame or vector containing the data to resample.
-If a data frame, each column represents a group or variable.}
+\item{dat}{A data frame or vector containing the data to resample.}
 
 \item{pooled}{Logical; if \code{TRUE} (default), data from all groups are
 pooled together for resampling. If \code{FALSE}, resampling is performed
@@ -39,10 +38,11 @@ should accept a vector of tags (the data to be resampled) and return a
 resampled vector of the same length. If \code{NULL} (default), the standard
 \code{sample} function is used with the \code{replace} argument.}
 
-\item{grp_var}{Character; name of the column that contains group labels when data is in long format
-(i.e., one observation per row with a separate column for group membership). If \code{NULL}
-(default), assumes data is in wide format with groups as separate columns. When \code{pooled = TRUE},
-groups are combined for resampling; when \code{pooled = FALSE}, resampling is performed separately
+\item{grp_var}{Character; name of the column that contains group labels when
+data is in long format (i.e., one observation per row with a column for
+group membership). If \code{NULL} (default), assumes data is in wide format
+with groups as separate columns. When \code{pooled = TRUE}, groups are combined
+for resampling; when \code{pooled = FALSE}, resampling is performed separately
 within each group.}
 }
 \value{
@@ -67,20 +67,13 @@ resampling is performed using a combined tagging scheme.
 When \code{pooled = FALSE}, the function applies the resampling procedure
 separately to each group.
 
-Internally, the function calls either a pooled version or a non-pooled version
-of the resampling algorithm. This approach provides flexibility depending on
-whether the groups in the data should be treated together or separately.
-
 The function supports two data formats for grouped data:
 \itemize{
-\item Wide format (default): Each group is represented as a separate column in the data frame
+\item Wide format (default): Each group is represented as a separate column
+in the data frame
 \item Long format: Data contains a column specifying group membership
 (specified via \code{grp_var})
 }
-
-When using long format with \code{pooled = TRUE}, all observations are pooled together regardless
-of group membership. When \code{pooled = FALSE}, resampling is performed separately within each
-group defined by \code{grp_var}.
 }
 \examples{
 # Example with a data frame and pooled = TRUE

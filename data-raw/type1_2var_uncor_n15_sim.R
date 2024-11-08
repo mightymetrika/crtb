@@ -15,10 +15,9 @@ type1_2var_uncor_n15_sim <- crtb_lm_sim(n = 15, sim_iter = 10000, B = 2000,
                                           return(list(X1 = X1, X2 = X2, epsilon = epsilon))
                                           },
                                         .formula = "Y ~ X1 + X2",
-                                        tie_thresh = 0,
+                                        tie_thresh = 0.0,
                                         alpha = 0.05,
                                         progress = FALSE)
 Sys.time()
-
 
 usethis::use_data(type1_2var_uncor_n15_sim, overwrite = TRUE)

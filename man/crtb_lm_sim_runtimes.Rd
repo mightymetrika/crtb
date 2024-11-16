@@ -7,7 +7,7 @@
 \format{
 \subsection{\code{crtb_lm_sim_runtimes}}{
 
-A data frame with 36 rows and 7 columns:
+A data frame with 39 rows and 7 columns:
 \describe{
 \item{instance}{AWS EC2 instance type}
 \item{iterations}{Number of simulation iterations}

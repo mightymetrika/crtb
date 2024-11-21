@@ -10,7 +10,7 @@ system.time(
                                                    )
                                                  },
                                                gen_ivs = function(n){
-                                                 X1 <- fGarch::rsnorm(n, mean = 0, sd = 1, xi = 0.8)
+                                                 X1 <- fGarch::rsnorm(n, mean = 0, sd = 1, xi = 3)
                                                  X2 <- stats::rnorm(n, 0, 3)
                                                  epsilon <- stats::rnorm(n)
                                                  return(list(X1 = X1, X2 = X2, epsilon = epsilon))

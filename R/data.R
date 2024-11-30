@@ -446,3 +446,20 @@
 #'   \item{rejection}{Rejection rate}
 #' }
 "pow_2var_uncor_n15_skew_sim"
+
+#' Simulation Results: pow_2var_uncor_n30_skew_sim
+#'
+#' Results from simulation study
+#'
+#' @format ## `pow_2var_uncor_n30_skew_sim`
+#' A data frame with 2 rows and 7 columns:
+#' \describe{
+#'   \item{results}{Bootstrap method}
+#'   \item{avg_bias}{Average bias across simulation iterations}
+#'   \item{avg_se}{Standard error across simulation iterations}
+#'   \item{coverage}{Proportion of confidence intervals that include true parameter}
+#'   \item{ci_width}{Average confidence interval width}
+#'   \item{converged}{Proportion of converged crtb}
+#'   \item{rejection}{Rejection rate}
+#' }
+"pow_2var_uncor_n30_skew_sim"
